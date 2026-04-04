@@ -1,7 +1,7 @@
 # ジョーティッシュ学習ノート
 
 インド占星術（**Jyotish / ジョーティッシュ**）を日本語で体系的に学ぶための学習ノートリポジトリです。  
-Sanskrit・英語の専門用語をカタカナ・日本語と併記しながら、基礎から中級まで段階的に解説します。
+Sanskrit・英語の専門用語をカタカナ・日本語と併記しながら、基礎から上級（KPシステム）まで段階的に解説します。
 
 ---
 
@@ -34,6 +34,16 @@ Sanskrit・英語の専門用語をカタカナ・日本語と併記しながら
 | 10 | [ヴィムショッタリー・ダシャー](03_intermediate/10_vimshottari-dasha.md) | 惑星期間システム |
 | 11 | [基本チャート解釈](03_intermediate/11_basic-interpretation.md) | 7ステップ解釈フレームワーク |
 
+### 第4章：KP占星術（Krishnamurti Paddhati）
+| # | ファイル | 内容 |
+|---|---------|------|
+| KP-01 | [KP概要・サブロード理論の基礎](04_kp-system/01_kp-overview.md) | KPとは・サブロード・Placidus・カスパル・サブロード |
+| KP-02 | [KPサブロード表（完全版）](04_kp-system/02_kp-sub-lord-table.md) | 243サブ区分の表・計算式・実践例 |
+| KP-03 | [シグニフィケーターと予測の実践](04_kp-system/03_kp-significators-and-prediction.md) | 4グループシグニフィケーター・時期特定フロー |
+| KP-04 | [KPゴーチャル（トランジット）](04_kp-system/04_kp-gochar-transit.md) | KP流トランジットによる日時の絞り込み |
+| KP-05 | [KPソフトウェアガイド](04_kp-system/05_kp-software-guide.md) | Jagannatha Hora等のソフト設定と使い方 |
+| KP-06 | [KPと伝統的Jyotishの比較・統合](04_kp-system/06_kp-vs-traditional.md) | 両システムの違い・使い分け・統合アプローチ |
+
 ### 参照
 | ファイル | 内容 |
 |---------|------|
@@ -46,7 +56,8 @@ Sanskrit・英語の専門用語をカタカナ・日本語と併記しながら
 1. **初学者**は `01` から順番に読み進めてください
 2. 各ファイルの冒頭に **前提ファイル** が明示されています
 3. `09_nakshatras.md` と `10_vimshottari-dasha.md` は連続して学ぶと理解が深まります
-4. 専門用語は [用語集](glossary.md) で随時確認できます
+4. **KPシステム（第4章）** は第3章まで完了してから学ぶことを推奨します
+5. 専門用語は [用語集](glossary.md) で随時確認できます
 
 ---
 
@@ -56,6 +67,7 @@ Sanskrit・英語の専門用語をカタカナ・日本語と併記しながら
 - **Saravali** — サーラーヴァリー（Kalyanavarmaaによる古典）
 - **Phaladeepika** — パラデーピカー（Mantreshvaraによる古典）
 - **Jataka Parijata** — ジャータカ・パーリジャータ
+- **KP Reader 1〜6** by K.S. Krishnamurti — KPシステムの一次資料（英語）
 
 ---
 

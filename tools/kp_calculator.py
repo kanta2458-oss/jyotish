@@ -965,5 +965,269 @@ def main():
     print(f"{'=' * 72}\n")
 
 
+# ---------------------------------------------------------------------------
+# KP Condition Score (調子スコア) functions
+# ---------------------------------------------------------------------------
+
+# House score baseline for Moon transit (natal house from lagna)
+HOUSE_VIBE = {
+    1: 80, 2: 60, 3: 10, 4: 30, 5: 90,
+    6: -50, 7: 40, 8: -70, 9: 90, 10: 80, 11: 90, 12: -40
+}
+
+# Focus weights: (house, multiplier) overrides
+FOCUS_WEIGHTS = {
+    'overall': {},
+    'career':  {10: 2.0, 11: 2.0},
+    'health':  {1: 2.0, 6: 3.0, 8: 3.0},
+    'fortune': {9: 2.0, 11: 2.0},
+}
+
+# House penalties for health (reversed from positive to negative)
+_HEALTH_PENALTY_HOUSES = {6, 8}
+
+
+def _moon_transit_score(transit_jd: float, natal_lagna_lon: float,
+                        lat: float, lon_geo: float, sub_table: list,
+                        focus: str = 'overall') -> float:
+    """
+    Compute Moon-transit component score for a given Julian Day.
+    Returns value roughly in -100 to +100.
+    """
+    # Current Moon position
+    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
+    moon_data, _ = swe.calc_ut(transit_jd, swe.MOON, flags)
+    moon_lon = moon_data[0] % 360.0
+
+    # Current transit cusps to find which house Moon occupies
+    transit_cusps = calc_placidus_cusps(transit_jd, lat, lon_geo)
+
+    # Determine Moon's house number (1-12) based on natal lagna as house 1 cusp
+    # We compare Moon lon relative to natal lagna
+    moon_house = 1
+    for h in range(11, 0, -1):
+        # Cusp longitude relative to lagna
+        cusp_offset = (transit_cusps[h - 1] - natal_lagna_lon) % 360.0
+        moon_offset = (moon_lon - natal_lagna_lon) % 360.0
+        if moon_offset >= cusp_offset:
+            moon_house = h + 1 if h < 12 else 1
+            break
+
+    # Simpler approach: use natal-based house numbering
+    # House 1 starts at natal lagna; each subsequent house ~30° later
+    moon_offset = (moon_lon - natal_lagna_lon) % 360.0
+    moon_house = int(moon_offset // 30) + 1  # 1-12
+
+    base_score = HOUSE_VIBE.get(moon_house, 0)
+
+    # Apply focus weight
+    weights = FOCUS_WEIGHTS.get(focus, {})
+    mult = weights.get(moon_house, 1.0)
+
+    # For health, houses 6/8 penalty is 3x (already negative, so multiply)
+    if focus == 'health' and moon_house in _HEALTH_PENALTY_HOUSES:
+        score = base_score * mult  # base is negative, mult=3 → larger negative
+    else:
+        score = base_score * mult
+
+    return max(-100.0, min(100.0, float(score)))
+
+
+def _rp_harmony_score(transit_jd: float, natal_sig: dict,
+                      lat: float, lon_geo: float,
+                      sub_table: list, focus: str = 'overall') -> float:
+    """
+    Compute Ruling-Planet harmony score vs natal significators.
+    Returns value in -100 to +100.
+    """
+    rp = calc_ruling_planets(transit_jd, lat, lon_geo, sub_table)
+    rp_set = {
+        rp['day_lord'], rp['moon_sign_lord'], rp['moon_star_lord'],
+        rp['lagna_sign_lord'], rp['lagna_star_lord'], rp['lagna_sub_lord']
+    }
+
+    good_houses = {1, 2, 5, 9, 10, 11}
+    bad_houses  = {6, 8, 12}
+
+    weights = FOCUS_WEIGHTS.get(focus, {})
+
+    total = 0.0
+    for planet in rp_set:
+        # Find houses this planet signifies (D group = sign lord)
+        d_houses = [h for h in range(1, 13) if natal_sig[h]['D'] == planet]
+        # Also include B group (planet resides in house)
+        b_houses = [h for h in range(1, 13) if planet in natal_sig[h]['B']]
+        all_houses = set(d_houses + b_houses)
+
+        for h in all_houses:
+            mult = weights.get(h, 1.0)
+            if h in good_houses:
+                total += 1.0 * mult
+            elif h in bad_houses:
+                total -= 1.0 * mult
+
+    # Normalize: max raw total ≈ 6 planets × 3 houses × mult → scale to -100..+100
+    normalized = total / 6.0 * 100.0
+    return max(-100.0, min(100.0, normalized))
+
+
+def _dasha_base_score(birth_jd: float, transit_jd: float,
+                      natal_sig: dict, focus: str = 'overall') -> float:
+    """
+    Compute Dasha base score (slow-changing component).
+    Returns value in -100 to +100.
+    """
+    moon_lon_birth = None
+    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
+    moon_data, _ = swe.calc_ut(birth_jd, swe.MOON, flags)
+    moon_lon_birth = moon_data[0] % 360.0
+
+    dashas, _, _ = calc_vimshottari_dasha(moon_lon_birth, birth_jd)
+
+    # Find current MD and AD
+    current_md_planet = None
+    current_ad_planet = None
+    for d in dashas:
+        if d['start_jd'] <= transit_jd <= d['end_jd']:
+            current_md_planet = d['planet']
+            for a in d['antardashas']:
+                if a['start_jd'] <= transit_jd <= a['end_jd']:
+                    current_ad_planet = a['planet']
+                    break
+            break
+
+    if not current_md_planet:
+        return 0.0
+
+    good_houses = {1, 2, 5, 9, 10, 11}
+    bad_houses  = {6, 8, 12}
+    weights = FOCUS_WEIGHTS.get(focus, {})
+
+    def planet_score(planet):
+        d_houses = [h for h in range(1, 13) if natal_sig[h]['D'] == planet]
+        b_houses = [h for h in range(1, 13) if planet in natal_sig[h]['B']]
+        all_houses = set(d_houses + b_houses)
+        s = 0.0
+        for h in all_houses:
+            mult = weights.get(h, 1.0)
+            if h in good_houses:
+                s += 20.0 * mult
+            elif h in bad_houses:
+                s -= 20.0 * mult
+        return s
+
+    md_score = planet_score(current_md_planet)
+    ad_score = planet_score(current_ad_planet) if current_ad_planet else md_score
+    avg = (md_score + ad_score) / 2.0
+    return max(-100.0, min(100.0, avg))
+
+
+def calc_condition_score(
+    transit_jd: float,
+    natal_lagna: float,
+    natal_sig: dict,
+    birth_jd: float,
+    lat: float,
+    lon_geo: float,
+    sub_table: list,
+    focus: str = 'overall'
+) -> float:
+    """
+    Compute KP condition score for a single point in time.
+
+    Args:
+        transit_jd:   Julian Day for the time point to evaluate
+        natal_lagna:  Natal ascendant longitude (degrees, sidereal)
+        natal_sig:    Natal significator dict from calc_significators()
+        birth_jd:     Julian Day of birth (for dasha calculation)
+        lat:          Geographic latitude
+        lon_geo:      Geographic longitude
+        sub_table:    KP sub-lord table from build_sub_lord_table()
+        focus:        'overall' | 'career' | 'health' | 'fortune'
+
+    Returns:
+        Score in range -100.0 to +100.0
+    """
+    moon_score  = _moon_transit_score(transit_jd, natal_lagna, lat, lon_geo, sub_table, focus)
+    rp_score    = _rp_harmony_score(transit_jd, natal_sig, lat, lon_geo, sub_table, focus)
+    dasha_score = _dasha_base_score(birth_jd, transit_jd, natal_sig, focus)
+
+    score = moon_score * 0.50 + rp_score * 0.35 + dasha_score * 0.15
+    return round(max(-100.0, min(100.0, score)), 1)
+
+
+def calc_condition_timeline(
+    birth_jd: float,
+    lat: float,
+    lon_geo: float,
+    start_jd: float,
+    end_jd: float,
+    interval_minutes: int = 30,
+    tz_offset_hours: float = 9.0
+) -> 'pd.DataFrame':
+    """
+    Compute KP condition score time series.
+
+    Returns:
+        DataFrame with columns:
+        ['jd', 'dt_local', 'overall', 'career', 'health', 'fortune',
+         'moon_house', 'moon_sign_ja']
+    """
+    import pandas as pd
+
+    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+
+    # Natal chart calculations (done once)
+    sub_table    = build_sub_lord_table()
+    natal_planets = calc_planet_positions(birth_jd, sub_table)
+    natal_cusps   = calc_placidus_cusps(birth_jd, lat, lon_geo)
+    natal_planets = assign_houses_to_planets(natal_planets, natal_cusps)
+    natal_sig     = calc_significators(natal_planets, natal_cusps)
+    natal_lagna   = natal_cusps[0]  # 1st cusp = ascendant
+
+    interval_days = interval_minutes / 1440.0
+
+    rows = []
+    jd = start_jd
+    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
+
+    while jd <= end_jd + interval_days * 0.01:
+        # Moon position for metadata
+        moon_data, _ = swe.calc_ut(jd, swe.MOON, flags)
+        moon_lon = moon_data[0] % 360.0
+        moon_sign_idx = int(moon_lon // 30)
+        moon_offset = (moon_lon - natal_lagna) % 360.0
+        moon_house = int(moon_offset // 30) + 1
+
+        # Local datetime
+        y_r, mo_r, d_r, h_r = swe.revjul(jd, swe.GREG_CAL)
+        local_h = h_r + tz_offset_hours
+        dt_local = datetime.datetime(
+            int(y_r), int(mo_r), int(d_r), 0, 0
+        ) + datetime.timedelta(hours=local_h)
+
+        # Scores for each focus
+        scores = {}
+        for focus in ('overall', 'career', 'health', 'fortune'):
+            scores[focus] = calc_condition_score(
+                jd, natal_lagna, natal_sig, birth_jd, lat, lon_geo, sub_table, focus
+            )
+
+        rows.append({
+            'jd':           jd,
+            'dt_local':     dt_local,
+            'overall':      scores['overall'],
+            'career':       scores['career'],
+            'health':       scores['health'],
+            'fortune':      scores['fortune'],
+            'moon_house':   moon_house,
+            'moon_sign_ja': SIGNS_JA[moon_sign_idx],
+        })
+
+        jd += interval_days
+
+    return pd.DataFrame(rows)
+
+
 if __name__ == '__main__':
     main()

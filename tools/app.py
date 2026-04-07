@@ -13,6 +13,7 @@ import datetime
 
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 
 # ---------------------------------------------------------------------------
 # Path setup - import from kp_calculator.py in the same directory
@@ -40,6 +41,7 @@ from kp_calculator import (
     calc_ruling_planets,
     jd_to_date_str,
     planet_display,
+    calc_condition_timeline,
 )
 
 # ---------------------------------------------------------------------------
@@ -485,6 +487,223 @@ def render_welcome():
 
 
 # ---------------------------------------------------------------------------
+# Condition Chart tab (調子チャート)
+# ---------------------------------------------------------------------------
+
+# Score label helper
+def _score_label(score: float) -> str:
+    if score >= 70:
+        return "絶好調 🌟"
+    elif score >= 40:
+        return "好調 ↑"
+    elif score >= 10:
+        return "やや好調"
+    elif score >= -10:
+        return "平常"
+    elif score >= -40:
+        return "やや低調"
+    elif score >= -70:
+        return "低調 ↓"
+    else:
+        return "要注意 ⚠"
+
+
+# House meaning labels
+_HOUSE_MEANING = {
+    1: "自己・活力", 2: "財・家族", 3: "努力・勇気", 4: "安心・家庭",
+    5: "喜び・創造", 6: "病・障害", 7: "パートナー", 8: "変容・危機",
+    9: "幸運・拡大", 10: "仕事・地位", 11: "利益・成就", 12: "孤立・損失",
+}
+
+
+def render_condition_tab(birth_jd: float, lat: float, lon_geo: float,
+                         sub_table: list, tz_offset: float = 9.0):
+    st.header("📈 調子チャート")
+    st.caption("KPシステムに基づく個人コンディション可視化 — 月トランジット・ルーリング惑星・ダシャーの複合スコア")
+
+    # ── Range selector ──────────────────────────────────────────
+    range_cols = st.columns(4)
+    range_labels = ["今日", "今週", "今月", "今年"]
+    if 'condition_range' not in st.session_state:
+        st.session_state['condition_range'] = "今日"
+
+    for i, label in enumerate(range_labels):
+        with range_cols[i]:
+            if st.button(label, key=f"range_{label}",
+                         type="primary" if st.session_state['condition_range'] == label else "secondary",
+                         use_container_width=True):
+                st.session_state['condition_range'] = label
+
+    selected = st.session_state['condition_range']
+
+    # ── Time range & interval ────────────────────────────────────
+    now_utc = datetime.datetime.utcnow()
+    now_jd = swe.julday(
+        now_utc.year, now_utc.month, now_utc.day,
+        now_utc.hour + now_utc.minute / 60.0 + now_utc.second / 3600.0,
+        swe.GREG_CAL,
+    )
+
+    range_config = {
+        "今日":  {"days": 1,   "interval": 30},
+        "今週":  {"days": 7,   "interval": 120},
+        "今月":  {"days": 30,  "interval": 360},
+        "今年":  {"days": 365, "interval": 2880},
+    }
+    cfg = range_config[selected]
+    start_jd = now_jd - cfg["days"] / 2
+    end_jd   = now_jd + cfg["days"] / 2
+
+    # ── Calculate with spinner ───────────────────────────────────
+    cache_key = f"condition_df_{selected}_{birth_jd:.2f}_{lat:.4f}_{lon_geo:.4f}"
+    if cache_key not in st.session_state:
+        with st.spinner(f"{selected}のスコアを計算中..."):
+            try:
+                import swisseph as swe_inner
+                swe_inner.set_sid_mode(swe_inner.SIDM_KRISHNAMURTI)
+                df = calc_condition_timeline(
+                    birth_jd=birth_jd,
+                    lat=lat,
+                    lon_geo=lon_geo,
+                    start_jd=start_jd,
+                    end_jd=end_jd,
+                    interval_minutes=cfg["interval"],
+                    tz_offset_hours=tz_offset,
+                )
+                st.session_state[cache_key] = df
+            except Exception as e:
+                st.error(f"スコア計算エラー: {e}")
+                st.exception(e)
+                return
+    df = st.session_state[cache_key]
+
+    if df.empty:
+        st.warning("データがありません")
+        return
+
+    # ── Current score display ────────────────────────────────────
+    # Find row closest to now
+    now_local = now_utc + datetime.timedelta(hours=tz_offset)
+    df['_dt_diff'] = (df['dt_local'] - now_local).abs()
+    closest_idx = df['_dt_diff'].idxmin()
+    current_row = df.loc[closest_idx]
+
+    score_val = current_row['overall']
+    moon_h    = int(current_row['moon_house'])
+    moon_sign = current_row['moon_sign_ja']
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric("総合スコア", f"{score_val:+.0f}", _score_label(score_val))
+    with c2:
+        st.metric("仕事", f"{current_row['career']:+.0f}")
+    with c3:
+        st.metric("健康", f"{current_row['health']:+.0f}")
+    with c4:
+        st.metric("運勢", f"{current_row['fortune']:+.0f}")
+
+    house_meaning = _HOUSE_MEANING.get(moon_h, "")
+    st.info(
+        f"**現在の月:** {moon_sign}座  第{moon_h}室 — {house_meaning}  ／  "
+        f"現地時刻: {now_local.strftime('%Y-%m-%d %H:%M')}"
+    )
+
+    # ── Plotly chart ─────────────────────────────────────────────
+    fig = go.Figure()
+
+    line_styles = {
+        'overall': {'color': '#FFFFFF', 'width': 2.5, 'name': '総合'},
+        'career':  {'color': '#00BFFF', 'width': 1.5, 'name': '仕事'},
+        'health':  {'color': '#00FF88', 'width': 1.5, 'name': '健康'},
+        'fortune': {'color': '#FFD700', 'width': 1.5, 'name': '運勢'},
+    }
+
+    for col, style in line_styles.items():
+        hover_texts = [
+            f"<b>{row['dt_local'].strftime('%m/%d %H:%M')}</b><br>"
+            f"スコア: {row[col]:+.0f}<br>"
+            f"月: {row['moon_sign_ja']}座 第{int(row['moon_house'])}室 ({_HOUSE_MEANING.get(int(row['moon_house']),'')})"
+            for _, row in df.iterrows()
+        ]
+        fig.add_trace(go.Scatter(
+            x=df['dt_local'],
+            y=df[col],
+            mode='lines',
+            name=style['name'],
+            line=dict(color=style['color'], width=style['width']),
+            hovertext=hover_texts,
+            hoverinfo='text',
+        ))
+
+    # Zero line and band annotations
+    fig.add_hline(y=0,   line_dash='dot', line_color='gray', line_width=1)
+    fig.add_hline(y=50,  line_dash='dot', line_color='rgba(0,200,80,0.3)',  line_width=1)
+    fig.add_hline(y=-50, line_dash='dot', line_color='rgba(200,50,50,0.3)', line_width=1)
+
+    # Background bands
+    fig.add_hrect(y0=50,  y1=100, fillcolor='rgba(0,200,80,0.05)',  line_width=0)
+    fig.add_hrect(y0=-100, y1=-50, fillcolor='rgba(200,50,50,0.05)', line_width=0)
+
+    # Now vertical line
+    fig.add_vline(
+        x=now_local,
+        line_dash='dash', line_color='rgba(255,80,80,0.7)', line_width=1.5,
+        annotation_text="現在", annotation_position="top right",
+        annotation_font_color='rgba(255,80,80,0.9)',
+    )
+
+    fig.update_layout(
+        paper_bgcolor='#1a1a2e',
+        plot_bgcolor='#16213e',
+        font=dict(color='#e0e0e0', family='sans-serif'),
+        xaxis=dict(
+            showgrid=True, gridcolor='rgba(255,255,255,0.08)',
+            tickfont=dict(size=11),
+        ),
+        yaxis=dict(
+            range=[-105, 105],
+            showgrid=True, gridcolor='rgba(255,255,255,0.08)',
+            tickvals=[-100, -50, 0, 50, 100],
+            ticktext=['-100', '-50', '0', '+50', '+100'],
+        ),
+        legend=dict(
+            orientation='h', yanchor='bottom', y=1.02,
+            xanchor='right', x=1,
+            bgcolor='rgba(0,0,0,0)',
+        ),
+        hovermode='x unified',
+        margin=dict(l=40, r=20, t=40, b=40),
+        height=420,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # ── Interpretation text ──────────────────────────────────────
+    with st.expander("この期間の解説"):
+        period_avg = df['overall'].mean()
+        best_row   = df.loc[df['overall'].idxmax()]
+        worst_row  = df.loc[df['overall'].idxmin()]
+
+        st.markdown(f"""
+**期間平均スコア:** {period_avg:+.1f}  （{_score_label(period_avg)}）
+
+**ベストタイミング:** {best_row['dt_local'].strftime('%m/%d %H:%M')}  スコア {best_row['overall']:+.0f}
+→ 月: {best_row['moon_sign_ja']}座 第{int(best_row['moon_house'])}室 （{_HOUSE_MEANING.get(int(best_row['moon_house']),'')}）
+
+**注意タイミング:** {worst_row['dt_local'].strftime('%m/%d %H:%M')}  スコア {worst_row['overall']:+.0f}
+→ 月: {worst_row['moon_sign_ja']}座 第{int(worst_row['moon_house'])}室 （{_HOUSE_MEANING.get(int(worst_row['moon_house']),'')}）
+
+**スコア構成：** 月トランジット 50% ＋ ルーリング惑星調和 35% ＋ ダシャー基調 15%
+        """)
+
+    # Clear cache button
+    if st.button("🔄 再計算", key="recalc_condition"):
+        if cache_key in st.session_state:
+            del st.session_state[cache_key]
+        st.rerun()
+
+
+# ---------------------------------------------------------------------------
 # Main app
 # ---------------------------------------------------------------------------
 def main():
@@ -554,13 +773,14 @@ def main():
     # -----------------------------------------------------------------------
     # Tabs
     # -----------------------------------------------------------------------
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "🌟 惑星位置",
         "🏠 カスプ表",
         "⏳ ダシャー表",
         "🔍 シグニフィケーター",
         "👑 ルーリング惑星",
         "📋 サブロード表",
+        "📈 調子チャート",
     ])
 
     with tab1:
@@ -580,6 +800,9 @@ def main():
 
     with tab6:
         render_sub_lord_tab(sub_table)
+
+    with tab7:
+        render_condition_tab(jd, lat, lon_geo, sub_table, tz_offset=inputs['tz'])
 
 
 if __name__ == "__main__":

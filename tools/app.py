@@ -42,6 +42,12 @@ from kp_calculator import (
     jd_to_date_str,
     planet_display,
     calc_condition_timeline,
+    # New engines
+    calc_planet_dignity,
+    calc_aspects,
+    calc_transit_summary,
+    calc_prashna_chart,
+    prepare_wheel_data,
 )
 
 # ---------------------------------------------------------------------------
@@ -465,7 +471,7 @@ def render_welcome():
 2. **「計算する」ボタン**をクリック
 3. 各タブで計算結果を確認できます
 
-### 計算内容（6タブ）
+### 計算内容（11タブ）
 
 | タブ | 内容 |
 |-----|------|
@@ -475,6 +481,11 @@ def render_welcome():
 | 🔍 **シグニフィケーター** | 各ハウスの A/B/C/D 4グループ分析 |
 | 👑 **ルーリング惑星** | 現在時刻の6ルーリング惑星 |
 | 📋 **サブロード表** | KP 243分割サブロード参照表 |
+| ⚖ **品位&アスペクト** | 惑星の品位（高揚/減弱/自室等）+ 惑星間アスペクト |
+| 🔄 **トランジット** | 現在惑星のネイタル影響・ハウス活性化・ダシャー連動 |
+| 🔮 **プラシュナ** | 問日占（ホラリー）— 質問時刻のKPチャート生成 |
+| 🌀 **ホイール** | ホロスコープ円形チャート（視覚的惑星配置） |
+| 📈 **調子チャート** | KP調子スコア時系列グラフ（今日/週/月/年） |
 
 ### デフォルト値
 - 場所: **東京**（緯度 35.6762°、経度 139.6503°）
@@ -484,6 +495,519 @@ def render_welcome():
 ---
 *計算エンジン: Swiss Ephemeris (pyswisseph) + KP アヤナムシャ*
     """)
+
+
+# ---------------------------------------------------------------------------
+# Tab 7: 品位 & アスペクト
+# ---------------------------------------------------------------------------
+DIGNITY_COLORS = {
+    'exalted':      ('#2ECC71', '#000'),  # green
+    'moolatrikona': ('#27AE60', '#FFF'),
+    'own':          ('#3498DB', '#FFF'),  # blue
+    'friendly':     ('#85C1E9', '#000'),
+    'neutral':      ('#BDC3C7', '#000'),  # grey
+    'enemy':        ('#E67E22', '#FFF'),  # orange
+    'debilitated':  ('#E74C3C', '#FFF'),  # red
+}
+
+NATURE_COLORS = {
+    'soft': '#2ECC71',    # green
+    'hard': '#E74C3C',    # red
+    'variable': '#F39C12', # yellow
+}
+
+
+def render_dignity_aspect_tab(planets: list[dict]):
+    st.header("⚖ 品位 & アスペクト")
+
+    # --- Dignity section ---
+    st.subheader("惑星の品位（Planetary Dignity）")
+    st.caption("各惑星が在住する星座での強弱を示す。高揚が最強、減弱が最弱。")
+
+    dignities = calc_planet_dignity(planets)
+    dig_rows = []
+    for d in dignities:
+        dig_rows.append({
+            "惑星": fmt_planet_label(d['abbr']),
+            "星座": f"{d['sign_ja']}（{d['sign_en']}）",
+            "ハウス": d['house'],
+            "品位": d['dignity_ja'],
+            "スコア": d['dignity_score'],
+            "_abbr": d['abbr'],
+            "_dignity": d['dignity'],
+        })
+    dig_df = pd.DataFrame(dig_rows)
+    display_cols = [c for c in dig_df.columns if not c.startswith('_')]
+
+    def style_dignity(row):
+        dignity_key = dig_df.at[row.name, '_dignity']
+        bg, fg = DIGNITY_COLORS.get(dignity_key, ('#BDC3C7', '#000'))
+        return [f"background-color: {bg}; color: {fg}; font-weight: bold;" for _ in row.index]
+
+    styled = dig_df[display_cols].style.apply(style_dignity, axis=1).hide(axis="index")
+    st.dataframe(styled, use_container_width=True)
+
+    # Visual summary bar
+    st.markdown("**品位サマリー:**")
+    summary_cols = st.columns(len(dignities))
+    for col, d in zip(summary_cols, dignities):
+        bg, fg = DIGNITY_COLORS.get(d['dignity'], ('#BDC3C7', '#000'))
+        score_display = f"{d['dignity_score']:+d}"
+        col.markdown(
+            f"<div style='background:{bg};color:{fg};text-align:center;"
+            f"padding:8px 2px;border-radius:8px;font-weight:bold;font-size:13px;'>"
+            f"{d['abbr']}<br><small>{d['dignity_ja']}</small><br>"
+            f"<span style='font-size:16px;'>{score_display}</span></div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
+
+    # --- Aspects section ---
+    st.subheader("惑星アスペクト（Planetary Aspects）")
+    st.caption("惑星間の角度関係。会合=0°、六分=60°、四分=90°、三分=120°、対向=180°")
+
+    aspects = calc_aspects(planets)
+    if not aspects:
+        st.info("検出されたアスペクトはありません")
+        return
+
+    asp_rows = []
+    for a in aspects:
+        vedic_mark = " ⭐" if a['is_vedic_special'] else ""
+        apply_mark = "→接近" if a['applying'] else "←離反"
+        asp_rows.append({
+            "惑星1": fmt_planet_label(a['planet1']),
+            "惑星2": fmt_planet_label(a['planet2']),
+            "アスペクト": a['aspect_ja'],
+            "実角度": f"{a['angle']:.1f}°",
+            "偏差": f"{a['deviation']:.1f}°",
+            "性質": a['nature_ja'] + vedic_mark,
+            "強度": a['strength'],
+            "状態": apply_mark,
+            "_nature": a['nature'],
+        })
+    asp_df = pd.DataFrame(asp_rows)
+    disp_cols = [c for c in asp_df.columns if not c.startswith('_')]
+
+    def style_aspect(row):
+        nature = asp_df.at[row.name, '_nature']
+        border_color = NATURE_COLORS.get(nature, '#BDC3C7')
+        return [f"border-left: 4px solid {border_color};" for _ in row.index]
+
+    styled_asp = asp_df[disp_cols].style.apply(style_aspect, axis=1).hide(axis="index")
+    st.dataframe(styled_asp, use_container_width=True)
+
+    # Aspect interpretation legend
+    with st.expander("アスペクト凡例"):
+        st.markdown("""
+| 記号 | 角度 | 性質 | 意味 |
+|------|------|------|------|
+| 会合 | 0° | 可変 | 惑星エネルギーの融合・増幅 |
+| 六分 | 60° | 調和 | 穏やかな協力・機会 |
+| 四分 | 90° | 緊張 | 挑戦・成長のための摩擦 |
+| 三分 | 120° | 調和 | 自然な才能・幸運の流れ |
+| 対向 | 180° | 緊張 | 対立・バランスの学び |
+| ⭐ | — | — | ヴェーダ特殊アスペクト（火星4/8、木星5/9、土星3/10） |
+        """)
+
+
+# ---------------------------------------------------------------------------
+# Tab 8: トランジット
+# ---------------------------------------------------------------------------
+def render_transit_tab(jd: float, lat: float, lon_geo: float, tz_offset: float):
+    st.header("🔄 トランジット解析")
+    st.caption("現在の惑星配置があなたのネイタルチャートにどう影響しているか")
+
+    now_utc = datetime.datetime.utcnow()
+    now_jd = swe.julday(
+        now_utc.year, now_utc.month, now_utc.day,
+        now_utc.hour + now_utc.minute / 60.0 + now_utc.second / 3600.0,
+        swe.GREG_CAL,
+    )
+    now_local = now_utc + datetime.timedelta(hours=tz_offset)
+
+    with st.spinner("トランジット計算中..."):
+        ts = calc_transit_summary(now_jd, jd, lat, lon_geo)
+
+    st.info(f"**解析時刻:** {now_local.strftime('%Y-%m-%d %H:%M')} (TZ={tz_offset:+.1f})")
+
+    # Current Dasha display
+    if ts['current_md'] and ts['current_ad']:
+        md_p = ts['current_md']['planet']
+        ad_p = ts['current_ad']['planet']
+        md_end = jd_to_date_str(ts['current_md']['end_jd'])
+        ad_end = jd_to_date_str(ts['current_ad']['end_jd'])
+        c1, c2 = st.columns(2)
+        with c1:
+            bg = PLANET_COLORS.get(md_p, '#EEE')
+            fg = PLANET_TEXT_COLORS.get(md_p, '#000')
+            st.markdown(
+                f"<div style='background:{bg};color:{fg};padding:12px;border-radius:8px;text-align:center;'>"
+                f"<b>マハーダシャー</b><br>"
+                f"<span style='font-size:24px;'>{md_p}（{PLANET_JA[md_p]}）</span><br>"
+                f"<small>〜{md_end}</small></div>",
+                unsafe_allow_html=True,
+            )
+        with c2:
+            bg = PLANET_COLORS.get(ad_p, '#EEE')
+            fg = PLANET_TEXT_COLORS.get(ad_p, '#000')
+            st.markdown(
+                f"<div style='background:{bg};color:{fg};padding:12px;border-radius:8px;text-align:center;'>"
+                f"<b>アンタルダシャー</b><br>"
+                f"<span style='font-size:24px;'>{ad_p}（{PLANET_JA[ad_p]}）</span><br>"
+                f"<small>〜{ad_end}</small></div>",
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("---")
+
+    # House activations
+    st.subheader("ハウス活性化マップ")
+    st.caption("各ハウスに現在トランジット中の惑星")
+
+    h_cols = st.columns(6)
+    for i, h in enumerate(range(1, 13)):
+        col = h_cols[i % 6]
+        act = ts['house_activations'][h]
+        planets_str = ", ".join(
+            f"{p}（{PLANET_JA[p]}）" for p in act['transiting_planets']
+        ) if act['transiting_planets'] else "—"
+        intensity = len(act['transiting_planets'])
+        bg_intensity = min(intensity * 40, 200)
+        bg = f"rgba(46,204,113,{bg_intensity/255:.2f})" if intensity > 0 else "rgba(200,200,200,0.1)"
+        col.markdown(
+            f"<div style='background:{bg};padding:8px;border-radius:6px;margin:2px 0;"
+            f"border:1px solid rgba(255,255,255,0.1);min-height:80px;'>"
+            f"<b>H{h}</b> {act['natal_sign_ja']}<br>"
+            f"<small>{planets_str}</small></div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
+
+    # Transit-to-natal aspects
+    st.subheader("トランジット→ネイタル アスペクト")
+    t2n = ts['transit_to_natal']
+    if t2n:
+        asp_rows = []
+        for a in t2n[:15]:
+            asp_rows.append({
+                "T惑星": fmt_planet_label(a['transit_planet']),
+                "N惑星": fmt_planet_label(a['natal_planet']),
+                "アスペクト": a['aspect_ja'],
+                "偏差": f"{a['deviation']:.1f}°",
+                "性質": a['nature_ja'],
+                "強度": a['strength'],
+                "Tハウス": a['transit_house'],
+                "Nハウス": a['natal_house'],
+                "_nature": a['nature'],
+            })
+        asp_df = pd.DataFrame(asp_rows)
+        disp_cols = [c for c in asp_df.columns if not c.startswith('_')]
+
+        def style_t2n(row):
+            nature = asp_df.at[row.name, '_nature']
+            color = NATURE_COLORS.get(nature, '#BDC3C7')
+            return [f"border-left: 4px solid {color};" for _ in row.index]
+
+        styled = asp_df[disp_cols].style.apply(style_t2n, axis=1).hide(axis="index")
+        st.dataframe(styled, use_container_width=True)
+    else:
+        st.info("現在、主要なアスペクトはありません")
+
+    # Transit planet positions table
+    with st.expander("現在の惑星位置（トランジット詳細）"):
+        tp_rows = []
+        for p in ts['transit_planets']:
+            retro = "R" if (p['retrograde'] or p['abbr'] in ('Ra', 'Ke')) else ""
+            tp_rows.append({
+                "惑星": fmt_planet_label(p['abbr']),
+                "星座": f"{p['sign_ja']}（{p['sign_en']}）",
+                "度分秒": fmt_dms(p['deg'], p['min'], p['sec']),
+                "NL": p['nl'], "SL": p['sl'],
+                "ネイタルH": p['house'],
+                "逆行": retro,
+            })
+        st.dataframe(pd.DataFrame(tp_rows), use_container_width=True)
+
+
+# ---------------------------------------------------------------------------
+# Tab 9: プラシュナ
+# ---------------------------------------------------------------------------
+def render_prashna_tab(lat: float, lon_geo: float, tz_offset: float):
+    st.header("🔮 プラシュナ（問日占 / Horary）")
+    st.caption("質問した瞬間のチャートで回答を得る — 誕生時刻が不要なKP独自の手法")
+
+    st.markdown("""
+> **プラシュナとは？**
+> 質問が心に浮かんだ瞬間の天体配置を使い、その質問に対する宇宙の回答を読み取る手法です。
+> KPシステムでは**ラグナのサブロード**が「Yes/No」の鍵を握ります。
+    """)
+
+    question = st.text_input("質問を入力（任意）", placeholder="例: 今の仕事を続けるべきか？")
+
+    if st.button("🔮 プラシュナ・チャート生成", type="primary"):
+        now_utc = datetime.datetime.utcnow()
+        now_jd = swe.julday(
+            now_utc.year, now_utc.month, now_utc.day,
+            now_utc.hour + now_utc.minute / 60.0 + now_utc.second / 3600.0,
+            swe.GREG_CAL,
+        )
+        now_local = now_utc + datetime.timedelta(hours=tz_offset)
+
+        with st.spinner("プラシュナ計算中..."):
+            swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+            pr = calc_prashna_chart(now_jd, lat, lon_geo, question)
+
+        st.success(f"**チャート生成時刻:** {now_local.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        if question:
+            st.info(f"**質問:** {question}")
+
+        # ASC Sub-Lord analysis (key for YES/NO)
+        asc_lon = pr['cusps'][0]
+        asc_sign_idx = int(asc_lon // 30)
+        st.markdown("### ラグナ・サブロード分析")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("ラグナ星座", f"{SIGNS_JA[asc_sign_idx]}（{SIGNS_EN[asc_sign_idx]}）")
+        with c2:
+            bg = PLANET_COLORS.get(pr['asc_sub_lord'], '#EEE')
+            fg = PLANET_TEXT_COLORS.get(pr['asc_sub_lord'], '#000')
+            st.markdown(
+                f"<div style='background:{bg};color:{fg};padding:10px;border-radius:8px;"
+                f"text-align:center;font-weight:bold;'>"
+                f"サブロード<br><span style='font-size:20px;'>"
+                f"{pr['asc_sub_lord']}（{PLANET_JA[pr['asc_sub_lord']]}）</span></div>",
+                unsafe_allow_html=True,
+            )
+        with c3:
+            bg = PLANET_COLORS.get(pr['asc_ssl'], '#EEE')
+            fg = PLANET_TEXT_COLORS.get(pr['asc_ssl'], '#000')
+            st.markdown(
+                f"<div style='background:{bg};color:{fg};padding:10px;border-radius:8px;"
+                f"text-align:center;font-weight:bold;'>"
+                f"SSL<br><span style='font-size:20px;'>"
+                f"{pr['asc_ssl']}（{PLANET_JA[pr['asc_ssl']]}）</span></div>",
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("---")
+
+        # Ruling Planets
+        rp = pr['ruling_planets']
+        rp_set = sorted({
+            rp['day_lord'], rp['moon_sign_lord'], rp['moon_star_lord'],
+            rp['lagna_sign_lord'], rp['lagna_star_lord'], rp['lagna_sub_lord']
+        })
+        st.markdown("### ルーリング惑星（質問時刻）")
+        rp_cols = st.columns(len(rp_set))
+        for col, abbr in zip(rp_cols, rp_set):
+            bg = PLANET_COLORS.get(abbr, '#EEE')
+            fg = PLANET_TEXT_COLORS.get(abbr, '#000')
+            col.markdown(
+                f"<div style='background:{bg};color:{fg};text-align:center;"
+                f"padding:8px;border-radius:8px;font-weight:bold;'>"
+                f"{abbr}<br><small>{PLANET_JA[abbr]}</small></div>",
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("---")
+
+        # Planet positions
+        st.markdown("### 惑星位置")
+        p_rows = []
+        for p in pr['planets']:
+            retro = "R" if (p['retrograde'] or p['abbr'] in ('Ra', 'Ke')) else ""
+            p_rows.append({
+                "惑星": fmt_planet_label(p['abbr']),
+                "星座": f"{p['sign_ja']}（{p['sign_en']}）",
+                "度分秒": fmt_dms(p['deg'], p['min'], p['sec']),
+                "NL": p['nl'], "SL": p['sl'], "SSL": p['ssl'],
+                "ハウス": p['house'],
+                "逆行": retro,
+            })
+        st.dataframe(pd.DataFrame(p_rows), use_container_width=True)
+
+        # Dignities
+        st.markdown("### 品位")
+        dig_rows = []
+        for d in pr['dignities']:
+            bg, fg = DIGNITY_COLORS.get(d['dignity'], ('#BDC3C7', '#000'))
+            dig_rows.append({
+                "惑星": fmt_planet_label(d['abbr']),
+                "品位": d['dignity_ja'],
+                "スコア": d['dignity_score'],
+            })
+        st.dataframe(pd.DataFrame(dig_rows), use_container_width=True)
+
+        # Aspects
+        if pr['aspects']:
+            st.markdown("### アスペクト")
+            asp_rows = []
+            for a in pr['aspects'][:10]:
+                asp_rows.append({
+                    "惑星1": fmt_planet_label(a['planet1']),
+                    "惑星2": fmt_planet_label(a['planet2']),
+                    "アスペクト": a['aspect_ja'],
+                    "偏差": f"{a['deviation']:.1f}°",
+                    "性質": a['nature_ja'],
+                    "強度": a['strength'],
+                })
+            st.dataframe(pd.DataFrame(asp_rows), use_container_width=True)
+
+
+# ---------------------------------------------------------------------------
+# Tab 10: ホロスコープ・ホイール
+# ---------------------------------------------------------------------------
+# Sign glyphs and planet glyphs for the wheel
+SIGN_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓']
+PLANET_GLYPHS = {
+    'Su': '☉', 'Mo': '☽', 'Ma': '♂', 'Me': '☿',
+    'Ju': '♃', 'Ve': '♀', 'Sa': '♄', 'Ra': '☊', 'Ke': '☋',
+}
+
+
+def render_wheel_tab(planets: list[dict], cusps: list[float]):
+    st.header("🌀 ホロスコープ・ホイール")
+    st.caption("出生チャートの視覚的表現 — 外環=星座、内環=ハウス、惑星配置")
+
+    import math
+    wd = prepare_wheel_data(planets, cusps)
+
+    fig = go.Figure()
+
+    asc_lon = wd['asc_lon']
+
+    # Helper: convert zodiac longitude to wheel angle (ASC = left/180°, counter-clockwise)
+    def lon_to_angle(lon):
+        return (180.0 - (lon - asc_lon)) % 360.0
+
+    # --- Outer ring: zodiac signs ---
+    for i in range(12):
+        start_angle = lon_to_angle(i * 30.0)
+        end_angle = lon_to_angle((i + 1) * 30.0)
+        mid_angle = lon_to_angle(i * 30.0 + 15.0)
+
+        # Sign label
+        rad = math.radians(mid_angle)
+        lx = 0.92 * math.cos(rad)
+        ly = 0.92 * math.sin(rad)
+        fig.add_annotation(
+            x=lx, y=ly, text=f"{SIGN_GLYPHS[i]}<br><sub>{SIGNS_JA[i]}</sub>",
+            showarrow=False, font=dict(size=13, color='#e0e0e0'),
+        )
+
+    # --- Sign boundary lines (outer ring) ---
+    for i in range(12):
+        angle = lon_to_angle(i * 30.0)
+        rad = math.radians(angle)
+        fig.add_trace(go.Scatter(
+            x=[0.82 * math.cos(rad), 1.0 * math.cos(rad)],
+            y=[0.82 * math.sin(rad), 1.0 * math.sin(rad)],
+            mode='lines', line=dict(color='rgba(255,255,255,0.3)', width=1),
+            showlegend=False, hoverinfo='skip',
+        ))
+
+    # --- House cusp lines ---
+    for i, cd in enumerate(wd['cusps']):
+        angle = lon_to_angle(cd['lon'])
+        rad = math.radians(angle)
+        width = 2 if i in (0, 3, 6, 9) else 1  # Angular houses get thicker lines
+        color = 'rgba(255,100,100,0.6)' if i in (0, 3, 6, 9) else 'rgba(255,255,255,0.2)'
+        fig.add_trace(go.Scatter(
+            x=[0, 0.82 * math.cos(rad)],
+            y=[0, 0.82 * math.sin(rad)],
+            mode='lines', line=dict(color=color, width=width),
+            showlegend=False, hoverinfo='skip',
+        ))
+        # House number label
+        next_cusp_lon = wd['cusps'][(i + 1) % 12]['lon']
+        mid_lon = cd['lon'] + ((next_cusp_lon - cd['lon']) % 360.0) / 2.0
+        mid_angle = lon_to_angle(mid_lon)
+        mrad = math.radians(mid_angle)
+        fig.add_annotation(
+            x=0.35 * math.cos(mrad), y=0.35 * math.sin(mrad),
+            text=str(i + 1),
+            showarrow=False, font=dict(size=11, color='rgba(255,255,255,0.5)'),
+        )
+
+    # --- Planet markers ---
+    for pd_ in wd['planets']:
+        angle = lon_to_angle(pd_['lon'])
+        rad = math.radians(angle)
+        r = 0.65  # radius for planets
+        px, py = r * math.cos(rad), r * math.sin(rad)
+        abbr = pd_['abbr']
+        glyph = PLANET_GLYPHS.get(abbr, abbr)
+        color = PLANET_COLORS.get(abbr, '#FFF')
+        retro_mark = ' R' if pd_['retrograde'] else ''
+
+        fig.add_trace(go.Scatter(
+            x=[px], y=[py],
+            mode='markers+text',
+            marker=dict(size=16, color=color, line=dict(width=1, color='rgba(0,0,0,0.5)')),
+            text=f"{glyph}{retro_mark}",
+            textposition='top center',
+            textfont=dict(size=14, color=color),
+            showlegend=False,
+            hovertext=f"{abbr}（{PLANET_JA[abbr]}）<br>{pd_['sign_ja']}座 H{pd_['house']}",
+            hoverinfo='text',
+        ))
+
+    # --- Outer circle and inner circle ---
+    theta = [i for i in range(361)]
+    for radius, color, width in [(1.0, 'rgba(255,255,255,0.4)', 2),
+                                  (0.82, 'rgba(255,255,255,0.3)', 1)]:
+        fig.add_trace(go.Scatter(
+            x=[radius * math.cos(math.radians(t)) for t in theta],
+            y=[radius * math.sin(math.radians(t)) for t in theta],
+            mode='lines', line=dict(color=color, width=width),
+            showlegend=False, hoverinfo='skip',
+        ))
+
+    # ASC / MC labels
+    asc_angle = lon_to_angle(asc_lon)
+    asc_rad = math.radians(asc_angle)
+    fig.add_annotation(
+        x=0.88 * math.cos(asc_rad), y=0.88 * math.sin(asc_rad),
+        text="<b>ASC</b>", showarrow=False,
+        font=dict(size=12, color='#FF6B6B'),
+    )
+
+    fig.update_layout(
+        paper_bgcolor='#1a1a2e',
+        plot_bgcolor='#1a1a2e',
+        xaxis=dict(
+            range=[-1.15, 1.15], showgrid=False, zeroline=False,
+            showticklabels=False, scaleanchor='y',
+        ),
+        yaxis=dict(
+            range=[-1.15, 1.15], showgrid=False, zeroline=False,
+            showticklabels=False,
+        ),
+        margin=dict(l=10, r=10, t=10, b=10),
+        height=600,
+        width=600,
+    )
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.plotly_chart(fig, use_container_width=True)
+    with col2:
+        st.markdown("### 惑星配置")
+        for pd_ in wd['planets']:
+            abbr = pd_['abbr']
+            color = PLANET_COLORS.get(abbr, '#FFF')
+            glyph = PLANET_GLYPHS.get(abbr, abbr)
+            retro = " R" if pd_['retrograde'] else ""
+            st.markdown(
+                f"<span style='color:{color};font-size:16px;'>"
+                f"{glyph} **{abbr}**（{PLANET_JA[abbr]}）</span>"
+                f" — {pd_['sign_ja']}座 H{pd_['house']}{retro}",
+                unsafe_allow_html=True,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -773,13 +1297,18 @@ def main():
     # -----------------------------------------------------------------------
     # Tabs
     # -----------------------------------------------------------------------
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    (tab1, tab2, tab3, tab4, tab5, tab6,
+     tab7, tab8, tab9, tab10, tab11) = st.tabs([
         "🌟 惑星位置",
         "🏠 カスプ表",
         "⏳ ダシャー表",
         "🔍 シグニフィケーター",
         "👑 ルーリング惑星",
         "📋 サブロード表",
+        "⚖ 品位&アスペクト",
+        "🔄 トランジット",
+        "🔮 プラシュナ",
+        "🌀 ホイール",
         "📈 調子チャート",
     ])
 
@@ -802,6 +1331,18 @@ def main():
         render_sub_lord_tab(sub_table)
 
     with tab7:
+        render_dignity_aspect_tab(planets)
+
+    with tab8:
+        render_transit_tab(jd, lat, lon_geo, tz_offset=inputs['tz'])
+
+    with tab9:
+        render_prashna_tab(lat, lon_geo, tz_offset=inputs['tz'])
+
+    with tab10:
+        render_wheel_tab(planets, cusps)
+
+    with tab11:
         render_condition_tab(jd, lat, lon_geo, sub_table, tz_offset=inputs['tz'])
 
 

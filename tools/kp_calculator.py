@@ -966,6 +966,526 @@ def main():
 
 
 # ---------------------------------------------------------------------------
+# Planetary Dignity (惑星の品位) calculation
+# ---------------------------------------------------------------------------
+
+# Exaltation: (sign_index, exact_degree) — classic Vedic exaltation points
+EXALTATION = {
+    'Su': (0, 10.0),   # Aries 10°
+    'Mo': (1, 3.0),    # Taurus 3°
+    'Ma': (9, 28.0),   # Capricorn 28°
+    'Me': (5, 15.0),   # Virgo 15°
+    'Ju': (3, 5.0),    # Cancer 5°
+    'Ve': (11, 27.0),  # Pisces 27°
+    'Sa': (6, 20.0),   # Libra 20°
+    'Ra': (1, 20.0),   # Taurus 20° (most accepted)
+    'Ke': (7, 20.0),   # Scorpio 20°
+}
+
+# Debilitation: exactly opposite sign of exaltation
+DEBILITATION = {
+    'Su': (6, 10.0),   # Libra
+    'Mo': (7, 3.0),    # Scorpio
+    'Ma': (3, 28.0),   # Cancer
+    'Me': (11, 15.0),  # Pisces
+    'Ju': (9, 5.0),    # Capricorn
+    'Ve': (5, 27.0),   # Virgo
+    'Sa': (0, 20.0),   # Aries
+    'Ra': (7, 20.0),   # Scorpio
+    'Ke': (1, 20.0),   # Taurus
+}
+
+# Own sign(s) — signs ruled by each planet
+OWN_SIGNS = {
+    'Su': [4],           # Leo
+    'Mo': [3],           # Cancer
+    'Ma': [0, 7],        # Aries, Scorpio
+    'Me': [2, 5],        # Gemini, Virgo
+    'Ju': [8, 11],       # Sagittarius, Pisces
+    'Ve': [1, 6],        # Taurus, Libra
+    'Sa': [9, 10],       # Capricorn, Aquarius
+    'Ra': [10],          # Aquarius (co-ruler)
+    'Ke': [7],           # Scorpio (co-ruler)
+}
+
+# Moolatrikona sign and degree range — (sign_index, start_deg, end_deg)
+MOOLATRIKONA = {
+    'Su': (4, 0.0, 20.0),    # Leo 0-20°
+    'Mo': (1, 3.0, 30.0),    # Taurus 3-30°
+    'Ma': (0, 0.0, 12.0),    # Aries 0-12°
+    'Me': (5, 15.0, 20.0),   # Virgo 15-20°
+    'Ju': (8, 0.0, 10.0),    # Sagittarius 0-10°
+    'Ve': (6, 0.0, 15.0),    # Libra 0-15°
+    'Sa': (10, 0.0, 20.0),   # Aquarius 0-20°
+}
+
+# Friendly / Neutral / Enemy relationships (natural)
+# permanent relationships between planets
+_FRIENDS = {
+    'Su': {'Mo', 'Ma', 'Ju'},
+    'Mo': {'Su', 'Me'},
+    'Ma': {'Su', 'Mo', 'Ju'},
+    'Me': {'Su', 'Ve'},
+    'Ju': {'Su', 'Mo', 'Ma'},
+    'Ve': {'Me', 'Sa'},
+    'Sa': {'Me', 'Ve'},
+    'Ra': {'Me', 'Ve', 'Sa'},
+    'Ke': {'Ma', 'Ju'},
+}
+_ENEMIES = {
+    'Su': {'Ve', 'Sa'},
+    'Mo': set(),
+    'Ma': {'Me'},
+    'Me': {'Mo'},
+    'Ju': {'Me', 'Ve'},
+    'Ve': {'Su', 'Mo'},
+    'Sa': {'Su', 'Mo', 'Ma'},
+    'Ra': {'Su', 'Mo', 'Ma'},
+    'Ke': {'Ve', 'Sa'},
+}
+
+
+def calc_planet_dignity(planets: list[dict]) -> list[dict]:
+    """
+    Calculate dignity status for each planet.
+
+    Returns list of dicts:
+        {abbr, dignity, dignity_ja, dignity_score, detail}
+
+    Dignity hierarchy (strongest to weakest):
+        Exaltation (高揚) > Moolatrikona (ムーラトリコーナ) > Own Sign (自室)
+        > Friendly (友好) > Neutral (中立) > Enemy (敵対) > Debilitation (減弱)
+    """
+    results = []
+    for p in planets:
+        abbr = p['abbr']
+        sign_idx = p['sign_idx']
+        deg_in_sign = p['lon'] % 30
+
+        dignity = 'neutral'
+        dignity_ja = '中立'
+        dignity_score = 0  # -3 to +3
+
+        # Check exaltation (exact sign match; orb tolerance ±5° for "near-exact")
+        ex_sign, ex_deg = EXALTATION[abbr]
+        if sign_idx == ex_sign:
+            dist = abs(deg_in_sign - ex_deg)
+            if dist <= 5:
+                dignity, dignity_ja, dignity_score = 'exalted', '高揚(深)', 3
+            else:
+                dignity, dignity_ja, dignity_score = 'exalted', '高揚', 3
+
+        # Check debilitation
+        deb_sign, deb_deg = DEBILITATION[abbr]
+        if sign_idx == deb_sign:
+            dist = abs(deg_in_sign - deb_deg)
+            if dist <= 5:
+                dignity, dignity_ja, dignity_score = 'debilitated', '減弱(深)', -3
+            else:
+                dignity, dignity_ja, dignity_score = 'debilitated', '減弱', -3
+
+        # Check moolatrikona (overrides own sign but not exaltation/debilitation)
+        if dignity == 'neutral' and abbr in MOOLATRIKONA:
+            mt_sign, mt_start, mt_end = MOOLATRIKONA[abbr]
+            if sign_idx == mt_sign and mt_start <= deg_in_sign < mt_end:
+                dignity, dignity_ja, dignity_score = 'moolatrikona', 'ムーラトリコーナ', 2
+
+        # Check own sign
+        if dignity == 'neutral' and sign_idx in OWN_SIGNS.get(abbr, []):
+            dignity, dignity_ja, dignity_score = 'own', '自室', 2
+
+        # Check friendly / enemy by sign lord
+        if dignity == 'neutral':
+            host_lord = SIGN_LORD[SIGNS_EN[sign_idx]]
+            if host_lord != abbr:
+                if host_lord in _FRIENDS.get(abbr, set()):
+                    dignity, dignity_ja, dignity_score = 'friendly', '友好', 1
+                elif host_lord in _ENEMIES.get(abbr, set()):
+                    dignity, dignity_ja, dignity_score = 'enemy', '敵対', -1
+                else:
+                    dignity, dignity_ja, dignity_score = 'neutral', '中立', 0
+
+        # Retrograde modifier
+        retro_note = ''
+        if p['retrograde'] and abbr not in ('Ra', 'Ke'):
+            retro_note = '（逆行中）'
+
+        results.append({
+            'abbr': abbr,
+            'name_ja': PLANET_JA[abbr],
+            'sign_ja': p['sign_ja'],
+            'sign_en': p['sign_en'],
+            'house': p['house'],
+            'dignity': dignity,
+            'dignity_ja': dignity_ja + retro_note,
+            'dignity_score': dignity_score,
+            'retrograde': p['retrograde'] and abbr not in ('Ra', 'Ke'),
+        })
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Planetary Aspects (惑星アスペクト) calculation
+# ---------------------------------------------------------------------------
+
+# Aspect definitions: (name_en, name_ja, angle, orb, nature, strength)
+ASPECT_DEFS = [
+    ('Conjunction', '会合(0°)',     0.0,   8.0,  'variable', 10),
+    ('Opposition',  '対向(180°)', 180.0,   8.0,  'hard',      8),
+    ('Trine',       '三分(120°)', 120.0,   7.0,  'soft',      7),
+    ('Square',      '四分(90°)',   90.0,   7.0,  'hard',      6),
+    ('Sextile',     '六分(60°)',   60.0,   5.0,  'soft',      4),
+]
+
+# Vedic special aspects (Graha Drishti): full-strength aspects unique to each planet
+# Mars: 4th & 8th aspects;  Jupiter: 5th & 9th;  Saturn: 3rd & 10th;  Rahu/Ketu: 5th & 9th
+VEDIC_SPECIAL_ASPECTS = {
+    'Ma': [90.0, 210.0],           # 4th (90°) and 8th (210°) from Mars
+    'Ju': [120.0, 240.0],          # 5th (120°) and 9th (240°) from Jupiter
+    'Sa': [60.0, 270.0],           # 3rd (60°) and 10th (270°) from Saturn
+    'Ra': [120.0, 240.0],          # same as Jupiter
+    'Ke': [120.0, 240.0],          # same as Jupiter
+}
+
+
+def calc_aspects(planets: list[dict], orb_factor: float = 1.0) -> list[dict]:
+    """
+    Calculate all aspects between planet pairs.
+
+    Args:
+        planets:    list of planet dicts from calc_planet_positions()
+        orb_factor: multiplier for orb tolerance (1.0 = standard, 0.5 = tight)
+
+    Returns list of dicts:
+        {planet1, planet2, aspect_name, aspect_ja, angle, exact_angle,
+         orb_used, nature, strength, is_vedic_special, applying}
+    """
+    aspects = []
+    n = len(planets)
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            p1, p2 = planets[i], planets[j]
+            diff = (p2['lon'] - p1['lon']) % 360.0
+            # Check both directions
+            for name_en, name_ja, target_angle, max_orb, nature, strength in ASPECT_DEFS:
+                orb = max_orb * orb_factor
+                # Forward difference
+                deviation_fwd = abs(diff - target_angle)
+                # Reverse difference
+                deviation_rev = abs((360.0 - diff) - target_angle) if target_angle > 0 else 999
+                deviation = min(deviation_fwd, deviation_rev)
+
+                if deviation <= orb:
+                    # Determine if applying or separating
+                    speed1 = p1.get('speed', 0)
+                    speed2 = p2.get('speed', 0)
+                    relative_speed = speed2 - speed1
+                    if target_angle == 0:
+                        applying = abs(diff) > 0 and relative_speed * (1 if diff > 180 else -1) < 0
+                    else:
+                        applying = deviation > 0 and relative_speed != 0
+
+                    # Check if this is a Vedic special aspect
+                    is_vedic = False
+                    if p1['abbr'] in VEDIC_SPECIAL_ASPECTS:
+                        for va in VEDIC_SPECIAL_ASPECTS[p1['abbr']]:
+                            if abs(diff - va) <= orb:
+                                is_vedic = True
+                                break
+                    if p2['abbr'] in VEDIC_SPECIAL_ASPECTS:
+                        for va in VEDIC_SPECIAL_ASPECTS[p2['abbr']]:
+                            rev_diff = (360.0 - diff) % 360.0
+                            if abs(rev_diff - va) <= orb:
+                                is_vedic = True
+                                break
+
+                    # Tighter orb = stronger
+                    closeness_bonus = max(0, (orb - deviation) / orb * 3)
+
+                    aspects.append({
+                        'planet1': p1['abbr'],
+                        'planet2': p2['abbr'],
+                        'aspect_name': name_en,
+                        'aspect_ja': name_ja,
+                        'angle': round(diff, 2),
+                        'exact_angle': target_angle,
+                        'deviation': round(deviation, 2),
+                        'orb_used': round(orb, 1),
+                        'nature': nature,
+                        'nature_ja': {'soft': '調和', 'hard': '緊張', 'variable': '可変'}[nature],
+                        'strength': round(strength + closeness_bonus, 1),
+                        'is_vedic_special': is_vedic,
+                        'applying': applying,
+                    })
+
+    # Sort by strength descending
+    aspects.sort(key=lambda x: x['strength'], reverse=True)
+    return aspects
+
+
+# ---------------------------------------------------------------------------
+# Transit Analysis (トランジット解析) — planetary transits over natal chart
+# ---------------------------------------------------------------------------
+
+def calc_transit_positions(transit_jd: float, sub_table: list[dict],
+                           natal_cusps: list[float]) -> list[dict]:
+    """
+    Calculate transit planet positions and map them to natal houses.
+
+    Returns list of dicts with full transit positional data
+    plus natal house assignment.
+    """
+    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+    transit_planets = calc_planet_positions(transit_jd, sub_table)
+    # Assign to NATAL houses (not transit houses)
+    transit_planets = assign_houses_to_planets(transit_planets, natal_cusps)
+    return transit_planets
+
+
+def calc_transit_aspects_to_natal(transit_planets: list[dict],
+                                  natal_planets: list[dict],
+                                  orb_factor: float = 0.8) -> list[dict]:
+    """
+    Calculate aspects between transit planets and natal planets.
+
+    Args:
+        transit_planets: current planet positions
+        natal_planets:   birth chart planet positions
+        orb_factor:      tighter orbs for transit (default 0.8)
+
+    Returns list of dicts similar to calc_aspects() but with
+    transit_planet and natal_planet keys.
+    """
+    aspects = []
+    for tp in transit_planets:
+        for np_ in natal_planets:
+            diff = (tp['lon'] - np_['lon']) % 360.0
+
+            for name_en, name_ja, target_angle, max_orb, nature, strength in ASPECT_DEFS:
+                orb = max_orb * orb_factor
+                deviation_fwd = abs(diff - target_angle)
+                deviation_rev = abs((360.0 - diff) - target_angle) if target_angle > 0 else 999
+                deviation = min(deviation_fwd, deviation_rev)
+
+                if deviation <= orb:
+                    closeness_bonus = max(0, (orb - deviation) / orb * 3)
+                    # Slow planets (Ju/Sa/Ra/Ke) get importance bonus
+                    slow_bonus = 2.0 if tp['abbr'] in ('Ju', 'Sa', 'Ra', 'Ke') else 0.0
+
+                    aspects.append({
+                        'transit_planet': tp['abbr'],
+                        'natal_planet':   np_['abbr'],
+                        'aspect_name':    name_en,
+                        'aspect_ja':      name_ja,
+                        'angle':          round(diff, 2),
+                        'exact_angle':    target_angle,
+                        'deviation':      round(deviation, 2),
+                        'nature':         nature,
+                        'nature_ja':      {'soft': '調和', 'hard': '緊張', 'variable': '可変'}[nature],
+                        'strength':       round(strength + closeness_bonus + slow_bonus, 1),
+                        'transit_house':  tp['house'],
+                        'natal_house':    np_['house'],
+                    })
+
+    aspects.sort(key=lambda x: x['strength'], reverse=True)
+    return aspects
+
+
+def calc_transit_summary(transit_jd: float, birth_jd: float,
+                         lat: float, lon_geo: float) -> dict:
+    """
+    Comprehensive transit analysis for a given moment.
+
+    Returns dict with:
+        transit_planets, natal_planets, transit_to_natal_aspects,
+        transit_inter_aspects, house_activations, dasha_info
+    """
+    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+    sub_table = build_sub_lord_table()
+
+    # Natal chart
+    natal_planets = calc_planet_positions(birth_jd, sub_table)
+    natal_cusps   = calc_placidus_cusps(birth_jd, lat, lon_geo)
+    natal_planets = assign_houses_to_planets(natal_planets, natal_cusps)
+    natal_sig     = calc_significators(natal_planets, natal_cusps)
+
+    # Transit chart
+    transit_planets = calc_transit_positions(transit_jd, sub_table, natal_cusps)
+
+    # Aspects: transit-to-natal
+    t2n_aspects = calc_transit_aspects_to_natal(transit_planets, natal_planets)
+
+    # Aspects: transit-to-transit
+    t2t_aspects = calc_aspects(transit_planets)
+
+    # House activation summary: which houses are activated by transit planets
+    house_activations = {}
+    for h in range(1, 13):
+        transiting = [tp['abbr'] for tp in transit_planets if tp['house'] == h]
+        house_activations[h] = {
+            'transiting_planets': transiting,
+            'natal_sign_ja': natal_sig[h]['sign_ja'],
+            'natal_lord': natal_sig[h]['D'],
+        }
+
+    # Current dasha info
+    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
+    moon_data, _ = swe.calc_ut(birth_jd, swe.MOON, flags)
+    moon_lon_birth = moon_data[0] % 360.0
+    dashas, _, _ = calc_vimshottari_dasha(moon_lon_birth, birth_jd)
+
+    current_md = current_ad = None
+    for d in dashas:
+        if d['start_jd'] <= transit_jd <= d['end_jd']:
+            current_md = d
+            for a in d['antardashas']:
+                if a['start_jd'] <= transit_jd <= a['end_jd']:
+                    current_ad = a
+                    break
+            break
+
+    return {
+        'transit_planets': transit_planets,
+        'natal_planets': natal_planets,
+        'natal_cusps': natal_cusps,
+        'natal_sig': natal_sig,
+        'transit_to_natal': t2n_aspects,
+        'transit_inter': t2t_aspects,
+        'house_activations': house_activations,
+        'current_md': current_md,
+        'current_ad': current_ad,
+        'sub_table': sub_table,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Prashna (ホラリー / 問日占) — Horary chart for current moment
+# ---------------------------------------------------------------------------
+
+def calc_prashna_chart(query_jd: float, lat: float, lon_geo: float,
+                       question: str = '') -> dict:
+    """
+    Generate a Prashna (horary) chart for the query moment.
+
+    In KP Prashna, the chart erected for the moment of query
+    is treated as a natal chart for that question.
+
+    Args:
+        query_jd:  Julian Day of the question moment
+        lat:       Latitude of the querent
+        lon_geo:   Longitude of the querent
+        question:  Optional question text for record
+
+    Returns dict with:
+        planets, cusps, sig, ruling_planets, dasha (from Moon),
+        question_text, query_jd, query_datetime
+    """
+    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+    sub_table = build_sub_lord_table()
+
+    planets = calc_planet_positions(query_jd, sub_table)
+    cusps   = calc_placidus_cusps(query_jd, lat, lon_geo)
+    planets = assign_houses_to_planets(planets, cusps)
+
+    moon_lon = next(p['lon'] for p in planets if p['abbr'] == 'Mo')
+    dashas, start_planet, remaining = calc_vimshottari_dasha(moon_lon, query_jd)
+
+    sig = calc_significators(planets, cusps)
+    rp  = calc_ruling_planets(query_jd, lat, lon_geo, sub_table)
+
+    # Dignity
+    dignities = calc_planet_dignity(planets)
+
+    # Aspects
+    aspects = calc_aspects(planets)
+
+    y, m, d, h = swe.revjul(query_jd, swe.GREG_CAL)
+
+    # KP Prashna analysis: ascendant sub-lord determines YES/NO
+    asc_lon = cusps[0]
+    _, asc_sl, asc_ssl = get_sub_lords(asc_lon, sub_table)
+
+    return {
+        'planets': planets,
+        'cusps': cusps,
+        'sig': sig,
+        'ruling_planets': rp,
+        'dashas': dashas,
+        'dasha_start_planet': start_planet,
+        'dasha_remaining': remaining,
+        'aspects': aspects,
+        'dignities': dignities,
+        'question': question,
+        'query_jd': query_jd,
+        'query_datetime': f"{int(y):04d}-{int(m):02d}-{int(d):02d} {h:.4f} UT",
+        'asc_sub_lord': asc_sl,
+        'asc_ssl': asc_ssl,
+        'sub_table': sub_table,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Horoscope Wheel data (ホロスコープ・ホイール用データ)
+# ---------------------------------------------------------------------------
+
+def prepare_wheel_data(planets: list[dict], cusps: list[float]) -> dict:
+    """
+    Prepare data for drawing a horoscope wheel.
+
+    Returns dict with:
+        cusps:  list of 12 {house, lon, sign_en, sign_ja, deg, min, sec}
+        planets: list of 9 {abbr, lon, house, sign_ja, display_angle}
+        sign_boundaries: list of 12 sign start angles
+    """
+    cusp_data = []
+    for i, lon in enumerate(cusps):
+        sign_idx, deg_in = deg_to_sign(lon)
+        d, m, s = deg_to_dms(lon)
+        cusp_data.append({
+            'house': i + 1,
+            'lon': lon,
+            'sign_en': SIGNS_EN[sign_idx],
+            'sign_ja': SIGNS_JA[sign_idx],
+            'deg': d, 'min': m, 'sec': s,
+        })
+
+    planet_data = []
+    for p in planets:
+        # Angle on wheel: measured from ASC (cusp 1) going counter-clockwise
+        display_angle = (p['lon'] - cusps[0]) % 360.0
+        planet_data.append({
+            'abbr': p['abbr'],
+            'name_ja': PLANET_JA[p['abbr']],
+            'lon': p['lon'],
+            'house': p['house'],
+            'sign_ja': p['sign_ja'],
+            'display_angle': display_angle,
+            'retrograde': p['retrograde'] and p['abbr'] not in ('Ra', 'Ke'),
+        })
+
+    # Sign boundaries (0=Aries start at 0°, Taurus at 30°, etc.)
+    sign_boundaries = []
+    for i in range(12):
+        sign_lon = i * 30.0
+        display_angle = (sign_lon - cusps[0]) % 360.0
+        sign_boundaries.append({
+            'sign_idx': i,
+            'sign_en': SIGNS_EN[i],
+            'sign_ja': SIGNS_JA[i],
+            'lon': sign_lon,
+            'display_angle': display_angle,
+        })
+
+    return {
+        'cusps': cusp_data,
+        'planets': planet_data,
+        'sign_boundaries': sign_boundaries,
+        'asc_lon': cusps[0],
+    }
+
+
+# ---------------------------------------------------------------------------
 # KP Condition Score (調子スコア) functions
 # ---------------------------------------------------------------------------
 

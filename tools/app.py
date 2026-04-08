@@ -48,6 +48,10 @@ from kp_calculator import (
     calc_transit_summary,
     calc_prashna_chart,
     prepare_wheel_data,
+    calc_all_vargas,
+    calc_yogas,
+    generate_report,
+    VARGA_INFO,
 )
 
 # ---------------------------------------------------------------------------
@@ -471,7 +475,7 @@ def render_welcome():
 2. **「計算する」ボタン**をクリック
 3. 各タブで計算結果を確認できます
 
-### 計算内容（11タブ）
+### 計算内容（14タブ）
 
 | タブ | 内容 |
 |-----|------|
@@ -485,6 +489,9 @@ def render_welcome():
 | 🔄 **トランジット** | 現在惑星のネイタル影響・ハウス活性化・ダシャー連動 |
 | 🔮 **プラシュナ** | 問日占（ホラリー）— 質問時刻のKPチャート生成 |
 | 🌀 **ホイール** | ホロスコープ円形チャート（視覚的惑星配置） |
+| 🔱 **分割チャート** | D2/D3/D9/D10/D12 分割図（ナヴァムシャ等） |
+| 🕉 **ヨーガ** | ラージャ・ヨーガ、ガージャケーサリー等の吉凶パターン検出 |
+| 📄 **レポート** | 全セクション統合の鑑定レポート（ダウンロード対応） |
 | 📈 **調子チャート** | KP調子スコア時系列グラフ（今日/週/月/年） |
 
 ### デフォルト値
@@ -1011,6 +1018,218 @@ def render_wheel_tab(planets: list[dict], cusps: list[float]):
 
 
 # ---------------------------------------------------------------------------
+# Tab 11: 分割チャート (Varga Charts)
+# ---------------------------------------------------------------------------
+VARGA_TAB_COLORS = {
+    2:  '#E74C3C',  # red
+    3:  '#E67E22',  # orange
+    9:  '#2ECC71',  # green
+    10: '#3498DB',  # blue
+    12: '#9B59B6',  # purple
+}
+
+
+def render_varga_tab(planets: list[dict]):
+    st.header("🔱 分割チャート（Varga Charts）")
+    st.caption("ネイタルチャートの各惑星を特定テーマの分割図に変換。D9ナヴァムシャが最重要。")
+
+    vargas = calc_all_vargas(planets)
+
+    # Summary cards
+    st.markdown("### チャート一覧")
+    info_cols = st.columns(5)
+    for idx, (div, (code, name_ja, name_en, theme)) in enumerate(VARGA_INFO.items()):
+        color = VARGA_TAB_COLORS.get(div, '#888')
+        info_cols[idx].markdown(
+            f"<div style='background:{color};color:white;padding:10px;border-radius:8px;"
+            f"text-align:center;font-weight:bold;'>"
+            f"<span style='font-size:20px;'>{code}</span><br>"
+            f"{name_ja}<br><small>{theme}</small></div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
+
+    # Detailed tables per division
+    for div, data in vargas.items():
+        code, name_ja, name_en, theme = VARGA_INFO[div]
+        color = VARGA_TAB_COLORS.get(div, '#888')
+
+        with st.expander(f"{code} {name_ja}（{name_en}）— {theme}", expanded=(div == 9)):
+            rows = []
+            for v in data:
+                p_color = PLANET_COLORS.get(v['abbr'], '#FFF')
+                rows.append({
+                    "惑星": fmt_planet_label(v['abbr']),
+                    "ネイタル星座": v['natal_sign_ja'],
+                    f"{code}星座": v['varga_sign_ja'],
+                    f"{code}支配星": fmt_planet_label(v['varga_lord']),
+                    "ネイタルH": v['natal_house'],
+                    "_abbr": v['abbr'],
+                })
+            vdf = pd.DataFrame(rows)
+            disp = [c for c in vdf.columns if not c.startswith('_')]
+
+            def style_varga(row):
+                abbr = vdf.at[row.name, '_abbr']
+                bg = PLANET_COLORS.get(abbr, '#FFF')
+                fg = PLANET_TEXT_COLORS.get(abbr, '#000')
+                return [f"background-color: {bg}; color: {fg}; font-weight: bold;"
+                        for _ in row.index]
+
+            styled = vdf[disp].style.apply(style_varga, axis=1).hide(axis="index")
+            st.dataframe(styled, use_container_width=True)
+
+    # Navamsha interpretation guide
+    with st.expander("D9 ナヴァムシャの読み方ガイド"):
+        st.markdown("""
+**D9（ナヴァムシャ）** はKPシステムにおいて最も重要な分割チャートです。
+
+| 項目 | 意味 |
+|------|------|
+| **金星のD9配置** | 配偶者の性質、結婚生活の質 |
+| **7室主のD9星座** | パートナーのタイプ、結婚のタイミング |
+| **ラグナ主のD9品位** | 本人の内面的成熟度、ダルマ（天命） |
+| **D9で高揚する惑星** | 晩年に開花する才能 |
+| **ヴァルゴッタマ** | ネイタルとD9が同じ星座 → その惑星は非常に強力 |
+
+**ヴァルゴッタマ（Vargottama）チェック:**
+        """)
+        # Check vargottama
+        d9 = vargas.get(9, [])
+        vargottama = []
+        for v, p in zip(d9, planets):
+            if p['sign_idx'] == v['varga_sign_idx']:
+                vargottama.append(f"**{p['abbr']}（{PLANET_JA[p['abbr']]}）** — {p['sign_ja']}座でヴァルゴッタマ！")
+        if vargottama:
+            for vt in vargottama:
+                st.markdown(f"- {vt}")
+        else:
+            st.markdown("- ヴァルゴッタマの惑星はありません")
+
+
+# ---------------------------------------------------------------------------
+# Tab 12: ヨーガ (Yogas)
+# ---------------------------------------------------------------------------
+YOGA_CATEGORY_COLORS = {
+    'raja':     ('#FFD700', '#000'),   # gold
+    'pancha':   ('#FF8C00', '#FFF'),   # dark orange
+    'dhana':    ('#2ECC71', '#FFF'),   # green
+    'viparita': ('#9B59B6', '#FFF'),   # purple
+    'general':  ('#3498DB', '#FFF'),   # blue
+    'chandra':  ('#C0C0C0', '#000'),   # silver
+    'dosha':    ('#E74C3C', '#FFF'),   # red
+}
+
+
+def render_yoga_tab(planets: list[dict], cusps: list[float], dignities: list[dict]):
+    st.header("🕉 ヨーガ（Yogas）")
+    st.caption("チャート内の特殊な惑星配置パターン — 吉兆・凶兆・特殊効果の検出")
+
+    yogas = calc_yogas(planets, cusps, dignities)
+
+    if not yogas:
+        st.info("主要なヨーガは検出されませんでした")
+        return
+
+    # Summary
+    raja_count = sum(1 for y in yogas if y['category'] in ('raja', 'pancha'))
+    dhana_count = sum(1 for y in yogas if y['category'] == 'dhana')
+    dosha_count = sum(1 for y in yogas if y['category'] == 'dosha')
+    general_count = sum(1 for y in yogas if y['category'] in ('general', 'viparita'))
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("王のヨーガ", f"{raja_count}個", "権力・成功")
+    c2.metric("財運ヨーガ", f"{dhana_count}個", "富・利益")
+    c3.metric("一般/逆転", f"{general_count}個", "吉兆・特殊")
+    c4.metric("凶兆ドーシャ", f"{dosha_count}個", "注意点")
+
+    st.markdown("---")
+
+    # Detailed yoga cards
+    for y in yogas:
+        bg, fg = YOGA_CATEGORY_COLORS.get(y['category'], ('#888', '#FFF'))
+        p_labels = ", ".join(f"{p}（{PLANET_JA[p]}）" for p in y['planets_involved'])
+        strength_bar = "●" * y['strength'] + "○" * (10 - y['strength'])
+
+        st.markdown(
+            f"<div style='background:{bg};color:{fg};padding:14px;border-radius:10px;"
+            f"margin-bottom:10px;'>"
+            f"<b style='font-size:16px;'>{y['name_ja']}</b>"
+            f"<span style='float:right;opacity:0.8;'>{y['category_ja']}</span><br>"
+            f"<small>{y['name']}</small><br><br>"
+            f"<span style='font-size:14px;'>{y['description']}</span><br><br>"
+            f"<b>関連惑星:</b> {p_labels}<br>"
+            f"<b>強度:</b> <code>{strength_bar}</code> {y['strength']}/10"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Yoga interpretation guide
+    with st.expander("ヨーガ分類ガイド"):
+        st.markdown("""
+| 分類 | 色 | 意味 |
+|------|---|------|
+| **王のヨーガ（Raja）** | 🟡 金 | ケンドラ主＋トリコーナ主の結合。権力・社会的成功 |
+| **五大偉人（Pancha Mahapurusha）** | 🟠 橙 | Ma/Me/Ju/Ve/Saがケンドラ＋高揚/自室。卓越した人格 |
+| **財運（Dhana）** | 🟢 緑 | 2室・11室関連。富の蓄積・利益 |
+| **逆転（Viparita Raja）** | 🟣 紫 | ドゥスターナ主がドゥスターナに在住。逆境からの大成功 |
+| **一般吉兆** | 🔵 青 | ガージャケーサリー、ブダーディティヤ等 |
+| **凶兆ドーシャ** | 🔴 赤 | ケーマドルマ等。注意すべき傾向 |
+        """)
+
+
+# ---------------------------------------------------------------------------
+# Tab 13: レポート出力
+# ---------------------------------------------------------------------------
+def render_report_tab(inputs: dict):
+    st.header("📄 鑑定レポート出力")
+    st.caption("全セクションを統合したテキストレポートをダウンロード")
+
+    st.markdown("""
+レポートには以下のセクションが含まれます:
+1. 惑星位置  2. カスプ表  3. 品位  4. アスペクト
+5. ヨーガ  6. ダシャー  7. ナヴァムシャ  8. シグニフィケーター
+    """)
+
+    if st.button("📄 レポート生成", type="primary", use_container_width=True):
+        with st.spinner("レポートを生成中..."):
+            swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+            report = generate_report(
+                inputs['year'], inputs['month'], inputs['day'],
+                inputs['hour'], inputs['minute'], inputs['tz'],
+                inputs['lat'], inputs['lon_geo'],
+            )
+
+        st.success("レポート生成完了！")
+
+        # Preview
+        with st.expander("プレビュー", expanded=True):
+            st.code(report, language=None)
+
+        # Download buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            st.download_button(
+                label="📥 テキストファイルでダウンロード",
+                data=report,
+                file_name=f"kp_report_{inputs['year']}{inputs['month']:02d}{inputs['day']:02d}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        with col2:
+            # Markdown version
+            md_report = report.replace('【', '## 【').replace('★', '- ★')
+            st.download_button(
+                label="📥 Markdownでダウンロード",
+                data=md_report,
+                file_name=f"kp_report_{inputs['year']}{inputs['month']:02d}{inputs['day']:02d}.md",
+                mime="text/markdown",
+                use_container_width=True,
+            )
+
+
+# ---------------------------------------------------------------------------
 # Condition Chart tab (調子チャート)
 # ---------------------------------------------------------------------------
 
@@ -1298,7 +1517,7 @@ def main():
     # Tabs
     # -----------------------------------------------------------------------
     (tab1, tab2, tab3, tab4, tab5, tab6,
-     tab7, tab8, tab9, tab10, tab11) = st.tabs([
+     tab7, tab8, tab9, tab10, tab11, tab12, tab13, tab14) = st.tabs([
         "🌟 惑星位置",
         "🏠 カスプ表",
         "⏳ ダシャー表",
@@ -1309,6 +1528,9 @@ def main():
         "🔄 トランジット",
         "🔮 プラシュナ",
         "🌀 ホイール",
+        "🔱 分割チャート",
+        "🕉 ヨーガ",
+        "📄 レポート",
         "📈 調子チャート",
     ])
 
@@ -1343,6 +1565,16 @@ def main():
         render_wheel_tab(planets, cusps)
 
     with tab11:
+        render_varga_tab(planets)
+
+    with tab12:
+        dignities = calc_planet_dignity(planets)
+        render_yoga_tab(planets, cusps, dignities)
+
+    with tab13:
+        render_report_tab(inputs)
+
+    with tab14:
         render_condition_tab(jd, lat, lon_geo, sub_table, tz_offset=inputs['tz'])
 
 

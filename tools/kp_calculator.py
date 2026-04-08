@@ -1486,6 +1486,501 @@ def prepare_wheel_data(planets: list[dict], cusps: list[float]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Divisional Charts (分割チャート / Varga Charts)
+# ---------------------------------------------------------------------------
+
+# D9 Navamsha start signs by element of natal sign
+# Fire(0,4,8)→Aries, Earth(1,5,9)→Capricorn, Air(2,6,10)→Libra, Water(3,7,11)→Cancer
+_D9_START = {0: 0, 4: 0, 8: 0,  1: 9, 5: 9, 9: 9,  2: 6, 6: 6, 10: 6,  3: 3, 7: 3, 11: 3}
+
+
+def calc_divisional_chart(planets: list[dict], division: int) -> list[dict]:
+    """
+    Calculate a divisional (varga) chart for each planet.
+
+    Args:
+        planets:  list from calc_planet_positions()
+        division: 2=Hora, 3=Drekkana, 9=Navamsha, 10=Dashamsha, 12=Dwadashamsha
+
+    Returns list of dicts:
+        {abbr, name_ja, natal_lon, natal_sign_ja, natal_house,
+         varga_sign_idx, varga_sign_en, varga_sign_ja, varga_lord}
+    """
+    results = []
+    for p in planets:
+        lon = p['lon']
+        sign_idx = p['sign_idx']
+        deg_in = lon % 30  # degree within sign (0-30)
+
+        if division == 2:
+            # D2 Hora: 0-15° = lord A, 15-30° = lord B
+            # Odd signs (0,2,4,...): 0-15→Sun(Leo=4), 15-30→Moon(Cancer=3)
+            # Even signs (1,3,5,...): 0-15→Moon(Cancer=3), 15-30→Sun(Leo=4)
+            is_odd = (sign_idx % 2 == 0)  # Aries=0=odd sign in Vedic
+            if is_odd:
+                v_sign = 4 if deg_in < 15 else 3   # Leo or Cancer
+            else:
+                v_sign = 3 if deg_in < 15 else 4
+
+        elif division == 3:
+            # D3 Drekkana: 3 decanates of 10° each
+            # 1st(0-10°)=same sign, 2nd(10-20°)=5th from sign, 3rd(20-30°)=9th from sign
+            part = int(deg_in // 10)
+            offsets = [0, 4, 8]
+            v_sign = (sign_idx + offsets[min(part, 2)]) % 12
+
+        elif division == 9:
+            # D9 Navamsha: 9 parts of 3°20' each
+            part = int(deg_in / (30.0 / 9))
+            part = min(part, 8)
+            start = _D9_START[sign_idx]
+            v_sign = (start + part) % 12
+
+        elif division == 10:
+            # D10 Dashamsha: 10 parts of 3° each
+            part = int(deg_in / 3)
+            part = min(part, 9)
+            # Odd signs: start from same sign; Even signs: start from 9th
+            if sign_idx % 2 == 0:  # odd sign (Aries=0)
+                v_sign = (sign_idx + part) % 12
+            else:
+                v_sign = (sign_idx + 9 + part) % 12
+
+        elif division == 12:
+            # D12 Dwadashamsha: 12 parts of 2°30' each
+            part = int(deg_in / 2.5)
+            part = min(part, 11)
+            v_sign = (sign_idx + part) % 12
+
+        else:
+            v_sign = sign_idx  # fallback
+
+        v_lord = SIGN_LORD[SIGNS_EN[v_sign]]
+
+        results.append({
+            'abbr': p['abbr'],
+            'name_ja': PLANET_JA[p['abbr']],
+            'natal_lon': lon,
+            'natal_sign_ja': p['sign_ja'],
+            'natal_house': p['house'],
+            'varga_sign_idx': v_sign,
+            'varga_sign_en': SIGNS_EN[v_sign],
+            'varga_sign_ja': SIGNS_JA[v_sign],
+            'varga_lord': v_lord,
+        })
+
+    return results
+
+
+# Names and descriptions of varga charts
+VARGA_INFO = {
+    2:  ('D2', 'ホーラ',           'Hora',         '富・財運'),
+    3:  ('D3', 'ドレッカナ',       'Drekkana',     '兄弟・勇気'),
+    9:  ('D9', 'ナヴァムシャ',     'Navamsha',     '配偶者・法（ダルマ）・内面'),
+    10: ('D10', 'ダシャムシャ',    'Dashamsha',    '職業・社会的地位'),
+    12: ('D12', 'ドヴァダシャムシャ', 'Dwadashamsha', '両親・前世'),
+}
+
+
+def calc_all_vargas(planets: list[dict]) -> dict:
+    """
+    Calculate all supported divisional charts.
+
+    Returns dict: division_number -> list of varga results
+    """
+    return {d: calc_divisional_chart(planets, d) for d in VARGA_INFO}
+
+
+# ---------------------------------------------------------------------------
+# Yoga (ヨーガ / 吉兆組合せ) Detection
+# ---------------------------------------------------------------------------
+
+# Kendra houses (angles)
+_KENDRA = {1, 4, 7, 10}
+# Trikona houses (trines)
+_TRIKONA = {1, 5, 9}
+# Dusthana houses
+_DUSTHANA = {6, 8, 12}
+# Upachaya houses
+_UPACHAYA = {3, 6, 10, 11}
+
+
+def _planet_in_houses(planets: list[dict], houses: set) -> list[str]:
+    """Return planet abbrs that are in any of the given houses."""
+    return [p['abbr'] for p in planets if p['house'] in houses]
+
+
+def _planet_house(planets: list[dict], abbr: str) -> int:
+    """Return the house number for a given planet."""
+    for p in planets:
+        if p['abbr'] == abbr:
+            return p['house']
+    return 0
+
+
+def _planet_sign(planets: list[dict], abbr: str) -> int:
+    """Return the sign index for a given planet."""
+    for p in planets:
+        if p['abbr'] == abbr:
+            return p['sign_idx']
+    return -1
+
+
+def _house_diff(h1: int, h2: int) -> int:
+    """Return house distance from h1 to h2 (1-12)."""
+    return ((h2 - h1) % 12) or 12
+
+
+def calc_yogas(planets: list[dict], cusps: list[float], dignities: list[dict]) -> list[dict]:
+    """
+    Detect classical Vedic/KP yogas.
+
+    Returns list of dicts:
+        {name, name_ja, category, description, planets_involved, strength}
+
+    Categories: 'raja'(王), 'dhana'(財), 'pancha'(偉人), 'chandra'(月),
+                'viparita'(逆転), 'general'(一般), 'dosha'(凶)
+    """
+    yogas = []
+    sig = calc_significators(planets, cusps)
+
+    # Build lookups
+    p_house = {p['abbr']: p['house'] for p in planets}
+    p_sign = {p['abbr']: p['sign_idx'] for p in planets}
+    dig_map = {d['abbr']: d for d in dignities}
+
+    # House lord map: house -> sign lord of cusp
+    h_lord = {}
+    for h in range(1, 13):
+        cusp_sign_idx = int(cusps[h-1] // 30) % 12
+        h_lord[h] = SIGN_LORD[SIGNS_EN[cusp_sign_idx]]
+
+    # ── 1. Pancha Mahapurusha Yogas (5 Great Person Yogas) ──
+    # Mars/Me/Ju/Ve/Sa in kendra AND in own/exalted sign
+    mahapurusha = {
+        'Ma': ('ルチャカ', 'Ruchaka', '勇気・武勇・リーダーシップの資質'),
+        'Me': ('バドラ',   'Bhadra',  '知性・弁才・学問的成功'),
+        'Ju': ('ハンサ',   'Hamsa',   '精神性・道徳・教師的資質'),
+        'Ve': ('マーラヴィヤ', 'Malavya', '美的感覚・芸術・物質的豊かさ'),
+        'Sa': ('シャシャ',  'Shasha',  '権威・政治力・組織運営の才能'),
+    }
+    for abbr, (name_ja, name_en, desc) in mahapurusha.items():
+        h = p_house.get(abbr, 0)
+        d = dig_map.get(abbr, {})
+        dignity = d.get('dignity', '')
+        if h in _KENDRA and dignity in ('exalted', 'own', 'moolatrikona'):
+            yogas.append({
+                'name': f'{name_en} Yoga',
+                'name_ja': f'{name_ja}・ヨーガ',
+                'category': 'pancha',
+                'category_ja': '五大偉人ヨーガ',
+                'description': desc,
+                'planets_involved': [abbr],
+                'strength': 9,
+            })
+
+    # ── 2. Gajakesari Yoga ──
+    # Jupiter in kendra from Moon (1/4/7/10 houses from Moon)
+    mo_h = p_house.get('Mo', 0)
+    ju_h = p_house.get('Ju', 0)
+    if mo_h and ju_h:
+        diff = _house_diff(mo_h, ju_h)
+        if diff in (1, 4, 7, 10):
+            yogas.append({
+                'name': 'Gajakesari Yoga',
+                'name_ja': 'ガージャケーサリー・ヨーガ',
+                'category': 'general',
+                'category_ja': '一般吉兆',
+                'description': '名声・知恵・富に恵まれる。月からケンドラに木星が在住。',
+                'planets_involved': ['Mo', 'Ju'],
+                'strength': 8,
+            })
+
+    # ── 3. Budhaditya Yoga ──
+    # Sun and Mercury in the same sign
+    if p_sign.get('Su') == p_sign.get('Me') and p_sign.get('Su') is not None:
+        yogas.append({
+            'name': 'Budhaditya Yoga',
+            'name_ja': 'ブダーディティヤ・ヨーガ',
+            'category': 'general',
+            'category_ja': '一般吉兆',
+            'description': '知性・分析力に優れ、学問的成功を示す。太陽と水星が同星座。',
+            'planets_involved': ['Su', 'Me'],
+            'strength': 6,
+        })
+
+    # ── 4. Chandra-Mangala Yoga ──
+    # Moon and Mars in same house or opposition
+    if p_house.get('Mo') == p_house.get('Ma'):
+        yogas.append({
+            'name': 'Chandra-Mangala Yoga',
+            'name_ja': 'チャンドラ・マンガラ・ヨーガ',
+            'category': 'dhana',
+            'category_ja': '財運ヨーガ',
+            'description': '財運・行動力に恵まれる。月と火星が合。',
+            'planets_involved': ['Mo', 'Ma'],
+            'strength': 6,
+        })
+
+    # ── 5. Raja Yoga ──
+    # Lord of a kendra + lord of a trikona in same house or mutual aspect
+    kendra_lords = {h_lord[h] for h in _KENDRA}
+    trikona_lords = {h_lord[h] for h in _TRIKONA}
+    # Planets that are both kendra and trikona lords
+    dual_lords = kendra_lords & trikona_lords
+    for dl in dual_lords:
+        yogas.append({
+            'name': 'Raja Yoga (dual lordship)',
+            'name_ja': 'ラージャ・ヨーガ（二重支配）',
+            'category': 'raja',
+            'category_ja': '王のヨーガ',
+            'description': f'{dl}（{PLANET_JA[dl]}）がケンドラとトリコーナの両方を支配。権力・地位。',
+            'planets_involved': [dl],
+            'strength': 8,
+        })
+
+    # Kendra lord conjunct trikona lord (different planets)
+    for kl in kendra_lords - dual_lords:
+        for tl in trikona_lords - dual_lords:
+            if kl != tl and p_house.get(kl) == p_house.get(tl) and p_house.get(kl):
+                yogas.append({
+                    'name': 'Raja Yoga (conjunction)',
+                    'name_ja': 'ラージャ・ヨーガ（会合）',
+                    'category': 'raja',
+                    'category_ja': '王のヨーガ',
+                    'description': f'ケンドラ主{kl}とトリコーナ主{tl}が第{p_house[kl]}室で会合。社会的成功。',
+                    'planets_involved': sorted([kl, tl]),
+                    'strength': 9,
+                })
+
+    # ── 6. Viparita Raja Yoga ──
+    # Lords of 6/8/12 placed in 6/8/12
+    dusthana_lords = [h_lord[h] for h in (6, 8, 12)]
+    for i, h in enumerate((6, 8, 12)):
+        lord = dusthana_lords[i]
+        lord_house = p_house.get(lord, 0)
+        if lord_house in _DUSTHANA and lord_house != h:
+            yogas.append({
+                'name': 'Viparita Raja Yoga',
+                'name_ja': 'ヴィパリータ・ラージャ・ヨーガ',
+                'category': 'viparita',
+                'category_ja': '逆転ヨーガ',
+                'description': f'第{h}室主{lord}（{PLANET_JA[lord]}）が第{lord_house}室（ドゥスターナ）に在住。逆境から立ち上がる力。',
+                'planets_involved': [lord],
+                'strength': 7,
+            })
+
+    # ── 7. Neecha Bhanga Raja Yoga (Cancellation of Debilitation) ──
+    for d in dignities:
+        if d['dignity'] == 'debilitated':
+            abbr = d['abbr']
+            # Check if the lord of the debilitation sign is in kendra from lagna or Moon
+            deb_sign = d['sign_en'] if 'sign_en' in d else SIGNS_EN[p_sign[abbr]]
+            deb_lord = SIGN_LORD[deb_sign]
+            deb_lord_h = p_house.get(deb_lord, 0)
+            if deb_lord_h in _KENDRA:
+                yogas.append({
+                    'name': 'Neecha Bhanga Raja Yoga',
+                    'name_ja': 'ニーチャ・バンガ・ラージャ・ヨーガ',
+                    'category': 'raja',
+                    'category_ja': '王のヨーガ',
+                    'description': f'{abbr}（{PLANET_JA[abbr]}）の減弱がキャンセル。'
+                                   f'{deb_lord}（{PLANET_JA[deb_lord]}）がケンドラ第{deb_lord_h}室。困難からの大成功。',
+                    'planets_involved': [abbr, deb_lord],
+                    'strength': 8,
+                })
+
+    # ── 8. Dhana Yoga (Wealth) ──
+    # Lords of 2 and 11 in conjunction or mutual kendra
+    lord_2 = h_lord[2]
+    lord_11 = h_lord[11]
+    if lord_2 != lord_11 and p_house.get(lord_2) == p_house.get(lord_11):
+        yogas.append({
+            'name': 'Dhana Yoga',
+            'name_ja': 'ダナ・ヨーガ',
+            'category': 'dhana',
+            'category_ja': '財運ヨーガ',
+            'description': f'第2室主{lord_2}と第11室主{lord_11}が会合。財の蓄積・利益。',
+            'planets_involved': sorted([lord_2, lord_11]),
+            'strength': 7,
+        })
+
+    # ── 9. Kemadruma Yoga (Dosha — Moon isolation) ──
+    # No planets in 2nd or 12th from Moon (excluding Ra/Ke/Su)
+    relevant = [p for p in planets if p['abbr'] not in ('Ra', 'Ke', 'Su')]
+    moon_h = p_house.get('Mo', 0)
+    if moon_h:
+        h_2nd = ((moon_h - 1 + 1) % 12) + 1
+        h_12th = ((moon_h - 1 - 1) % 12) + 1
+        flanking = [p for p in relevant if p['house'] in (h_2nd, h_12th) and p['abbr'] != 'Mo']
+        if not flanking:
+            yogas.append({
+                'name': 'Kemadruma Yoga',
+                'name_ja': 'ケーマドルマ・ヨーガ',
+                'category': 'dosha',
+                'category_ja': '凶兆ドーシャ',
+                'description': '月の前後に惑星がなく、孤独感・精神的不安定の傾向。ただしケンドラの惑星で緩和。',
+                'planets_involved': ['Mo'],
+                'strength': 5,
+            })
+
+    # ── 10. Amala Yoga ──
+    # Benefic (Ju/Ve/Me) in 10th from lagna or Moon
+    benefics = {'Ju', 'Ve', 'Me'}
+    for p in planets:
+        if p['abbr'] in benefics and p['house'] == 10:
+            yogas.append({
+                'name': 'Amala Yoga',
+                'name_ja': 'アマラ・ヨーガ',
+                'category': 'general',
+                'category_ja': '一般吉兆',
+                'description': f'{p["abbr"]}（{PLANET_JA[p["abbr"]]}）が第10室に在住。善行・名声・社会的評価。',
+                'planets_involved': [p['abbr']],
+                'strength': 6,
+            })
+
+    # Sort by strength descending
+    yogas.sort(key=lambda y: y['strength'], reverse=True)
+    return yogas
+
+
+# ---------------------------------------------------------------------------
+# Report Generation (鑑定レポート生成)
+# ---------------------------------------------------------------------------
+
+def generate_report(
+    year: int, month: int, day: int, hour: int, minute: int,
+    tz: float, lat: float, lon_geo: float
+) -> str:
+    """
+    Generate a comprehensive KP astrology report as formatted text.
+
+    Returns a multi-section text report.
+    """
+    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+
+    jd = birth_to_jd(year, month, day, hour, minute, tz)
+    sub_table = build_sub_lord_table()
+    planets = calc_planet_positions(jd, sub_table)
+    cusps = calc_placidus_cusps(jd, lat, lon_geo)
+    planets = assign_houses_to_planets(planets, cusps)
+    moon_lon = next(p['lon'] for p in planets if p['abbr'] == 'Mo')
+    dashas, start_planet, remaining = calc_vimshottari_dasha(moon_lon, jd)
+    sig = calc_significators(planets, cusps)
+    dignities = calc_planet_dignity(planets)
+    aspects = calc_aspects(planets)
+    yogas = calc_yogas(planets, cusps, dignities)
+    vargas = calc_all_vargas(planets)
+
+    aya = swe.get_ayanamsa_ut(jd)
+    asc_sign_idx = int(cusps[0] // 30)
+
+    lines = []
+    sep = '=' * 60
+
+    # Header
+    lines.append(sep)
+    lines.append('  KP (クリシュナムルティ・パッダティ) 占星術鑑定レポート')
+    lines.append(sep)
+    lines.append(f'  生年月日: {year:04d}年{month:02d}月{day:02d}日 {hour:02d}:{minute:02d}')
+    lines.append(f'  TZ: {tz:+.1f}h  緯度: {lat:+.4f}°  経度: {lon_geo:+.4f}°')
+    lines.append(f'  KP アヤナムシャ: {aya:.4f}°')
+    lines.append(f'  ラグナ: {SIGNS_JA[asc_sign_idx]}（{SIGNS_EN[asc_sign_idx]}）')
+    lines.append(sep)
+    lines.append('')
+
+    # Section 1: Planet positions
+    lines.append('【1. 惑星位置】')
+    lines.append(f'{"惑星":<12}{"星座":<10}{"度分秒":<12}{"ナクシャトラ":<16}{"NL":<4}{"SL":<4}{"SSL":<4}{"H":<3}{"R":<2}')
+    lines.append('-' * 72)
+    for p in planets:
+        retro = 'R' if (p['retrograde'] or p['abbr'] in ('Ra', 'Ke')) else ''
+        d, m, s = p['deg'], p['min'], p['sec']
+        lines.append(
+            f'{p["abbr"]}({PLANET_JA[p["abbr"]]}){"":<4}'
+            f'{p["sign_ja"]:<8}'
+            f'{d:02d}°{m:02d}′{s:02d}″{"":<4}'
+            f'{p["nak_name"]:<16}'
+            f'{p["nl"]:<4}{p["sl"]:<4}{p["ssl"]:<4}'
+            f'H{p["house"]:<2}{retro}'
+        )
+    lines.append('')
+
+    # Section 2: Cusps
+    lines.append('【2. カスプ表（プラシダス）】')
+    lines.append(f'{"ハウス":<10}{"星座":<10}{"度分秒":<12}{"NL":<4}{"SL":<4}{"SSL":<4}')
+    lines.append('-' * 48)
+    for i, lon in enumerate(cusps):
+        si, _ = deg_to_sign(lon)
+        d, m, s = deg_to_dms(lon)
+        nl, sl, ssl = get_sub_lords(lon, sub_table)
+        lines.append(f'H{i+1:<8}{SIGNS_JA[si]:<8}{d:02d}°{m:02d}′{s:02d}″{"":<4}{nl:<4}{sl:<4}{ssl:<4}')
+    lines.append('')
+
+    # Section 3: Dignity
+    lines.append('【3. 惑星の品位】')
+    for d in dignities:
+        lines.append(f'  {d["abbr"]}({d["name_ja"]}) in {d["sign_ja"]}: {d["dignity_ja"]} (スコア {d["dignity_score"]:+d})')
+    lines.append('')
+
+    # Section 4: Aspects
+    lines.append('【4. アスペクト】')
+    for a in aspects:
+        vedic = ' [ヴェーダ特殊]' if a['is_vedic_special'] else ''
+        lines.append(
+            f'  {a["planet1"]}-{a["planet2"]}: {a["aspect_ja"]} '
+            f'偏差{a["deviation"]:.1f}° 性質={a["nature_ja"]} 強度={a["strength"]}{vedic}'
+        )
+    lines.append('')
+
+    # Section 5: Yogas
+    lines.append('【5. ヨーガ（吉兆・凶兆組合せ）】')
+    if yogas:
+        for y in yogas:
+            p_str = ','.join(y['planets_involved'])
+            lines.append(f'  ★ {y["name_ja"]}（{y["name"]}）')
+            lines.append(f'    分類: {y["category_ja"]}  関連惑星: {p_str}  強度: {y["strength"]}/10')
+            lines.append(f'    {y["description"]}')
+            lines.append('')
+    else:
+        lines.append('  主要なヨーガは検出されませんでした')
+    lines.append('')
+
+    # Section 6: Dasha
+    lines.append('【6. ダシャー表（抜粋）】')
+    lines.append(f'  出生時ダシャー: {start_planet}({PLANET_JA[start_planet]})  残余: {remaining:.4f}年')
+    for d in dashas:
+        lines.append(f'  {d["planet"]}({PLANET_JA[d["planet"]]}) '
+                     f'{jd_to_date_str(d["start_jd"])} → {jd_to_date_str(d["end_jd"])} '
+                     f'({d["years"]:.2f}年)')
+    lines.append('')
+
+    # Section 7: Navamsha
+    lines.append('【7. ナヴァムシャ（D9）】')
+    d9 = vargas.get(9, [])
+    for v in d9:
+        lines.append(f'  {v["abbr"]}({v["name_ja"]}): {v["natal_sign_ja"]} → D9: {v["varga_sign_ja"]} (主={v["varga_lord"]})')
+    lines.append('')
+
+    # Section 8: Significators
+    lines.append('【8. シグニフィケーター】')
+    for h in range(1, 13):
+        s = sig[h]
+        a_str = ','.join(s['A']) or '―'
+        b_str = ','.join(s['B']) or '―'
+        c_str = ','.join(s['C']) or '―'
+        lines.append(f'  H{h} {s["sign_ja"]}: A={a_str}  B={b_str}  C={c_str}  D={s["D"]}')
+    lines.append('')
+
+    lines.append(sep)
+    lines.append('  レポート生成: KP占星術計算ツール (jyotish)')
+    lines.append('  計算エンジン: Swiss Ephemeris + KP アヤナムシャ')
+    lines.append(sep)
+
+    return '\n'.join(lines)
+
+
+# ---------------------------------------------------------------------------
 # KP Condition Score (調子スコア) functions
 # ---------------------------------------------------------------------------
 

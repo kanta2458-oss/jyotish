@@ -150,10 +150,10 @@ def _planets_to_json(planets, dignities):
             'abbr': p['abbr'],
             'name_ja': kp.PLANET_JA.get(p['abbr'], p['abbr']),
             'sign_ja': p['sign_ja'],
-            'sign_en': p['sign'],
+            'sign_en': p['sign_en'],
             'deg': d, 'min': m, 'sec': s,
             'lon': _f(p['lon']),
-            'nak': p['nak'],
+            'nak': p['nak_name'],
             'nl': p['nl'],
             'sl': p['sl'],
             'ssl': p['ssl'],
@@ -296,7 +296,7 @@ def natal(bd: BirthData):
     try:
         jd, sub_table, planets, cusps = _natal_core(bd)
         now_jd = kp.birth_to_jd(
-            *_today_parts(), tz=bd.tz
+            *_today_parts(), bd.tz
         )
 
         # Moon longitude for dasha
@@ -381,7 +381,7 @@ def transit(req: TransitRequest):
             )
         else:
             y, m, d, h = swe.revjul(kp.birth_to_jd(
-                *_today_parts(), tz=req.tz
+                *_today_parts(), req.tz
             ), swe.GREG_CAL)
             tr_jd = kp.birth_to_jd(int(y), int(m), int(d), 12, 0, req.tz)
 
@@ -397,7 +397,7 @@ def transit(req: TransitRequest):
                 'deg': d_, 'min': m_, 'sec': s_,
                 'lon': _f(p['lon']),
                 'house': p.get('house', 0),
-                'nak': p.get('nak', ''),
+                'nak': p.get('nak_name', ''),
                 'nl': p.get('nl', ''),
                 'sl': p.get('sl', ''),
                 'ssl': p.get('ssl', ''),
@@ -409,8 +409,8 @@ def transit(req: TransitRequest):
             'natal_planets': [tr_planet(p) for p in summary.get('natal_planets', [])],
             'transit_to_natal': [
                 {
-                    'transit': a['transit'],
-                    'natal': a['natal'],
+                    'transit': a.get('transit_planet', a.get('transit', '')),
+                    'natal': a.get('natal_planet', a.get('natal', '')),
                     'aspect': a.get('aspect_ja', a.get('aspect', '')),
                     'deviation': _f(a.get('deviation', 0), 2),
                     'strength': _f(a.get('strength', 0), 1),
@@ -419,8 +419,8 @@ def transit(req: TransitRequest):
                 for a in summary.get('transit_to_natal', [])
             ],
             'house_activations': summary.get('house_activations', {}),
-            'current_md': summary.get('current_md', ''),
-            'current_ad': summary.get('current_ad', ''),
+            'current_md': (summary.get('current_md') or {}).get('planet', ''),
+            'current_ad': (summary.get('current_ad') or {}).get('planet', ''),
         }
         return JSONResponse(_safe(response))
     except Exception as exc:
@@ -434,7 +434,7 @@ def transit(req: TransitRequest):
 @app.post("/api/prashna")
 def prashna(req: PrashnaRequest):
     try:
-        now_jd = kp.birth_to_jd(*_today_parts(), tz=req.tz)
+        now_jd = kp.birth_to_jd(*_today_parts(), req.tz)  # positional: (y,m,d,h,min,tz)
         result = kp.calc_prashna_chart(now_jd, req.lat, req.lon, req.question)
 
         def fmt_planet(p):

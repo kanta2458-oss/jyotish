@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KP 天体公文書</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+<style>
+:root {
+  --bg:     #050D1A;
+  --bg1:    #0B1326;
+  --bg2:    #111928;
+  --border: #1E293B;
+  --text:   #CBD5E1;
+  --dim:    #64748B;
+  --gold:   #F6BE3B;
+  --green:  #4EDEA3;
+  --red:    #FF4B4B;
+  --blue:   #93C5FD;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+.serif { font-family: 'Noto Serif JP', serif; }
+.layout { display: flex; height: 100vh; overflow: hidden; }
+/* Sidebar */
+.sidebar {
+  width: 200px; min-width: 200px; background: var(--bg1);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.sidebar-head { padding: 18px 16px 12px; border-bottom: 1px solid var(--border); }
+.sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: var(--gold); letter-spacing: 0.05em; font-weight: 600; }
+.sidebar-sub { font-family: 'Noto Serif JP', serif; font-size: 10px; color: var(--dim); margin-top: 2px; letter-spacing: 0.1em; }
+.birth-form { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.birth-form label { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim); margin-bottom: 2px; margin-top: 8px; }
+.birth-form label:first-child { margin-top: 0; }
+.birth-form input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  padding: 4px 6px; border-radius: 2px; outline: none;
+}
+.birth-form input:focus { border-color: var(--gold); }
+.birth-form .row2 { display: flex; gap: 4px; }
+.birth-form .row2 input { flex: 1; }
+.calc-btn {
+  width: 100%; margin-top: 10px; padding: 7px;
+  background: transparent; border: 1px solid var(--gold); color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; cursor: pointer; border-radius: 2px;
+  transition: background 0.15s;
+}
+.calc-btn:hover { background: rgba(246,190,59,0.08); }
+.calc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.nav-list { flex: 1; padding: 8px 0; }
+.nav-item {
+  display: flex; align-items: center; padding: 7px 16px;
+  cursor: pointer; color: var(--dim); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  border-left: 2px solid transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  transition: color 0.1s;
+}
+.nav-item:hover { color: var(--text); }
+.nav-item.active { color: var(--gold); border-left-color: var(--gold); }
+.nav-item .nav-en { margin-right: 6px; }
+.nav-item .nav-ja { color: var(--dim); font-size: 9px; font-family: 'Noto Serif JP', serif; }
+.nav-item.active .nav-ja { color: rgba(246,190,59,0.6); }
+.dasha-badge { margin: 0 16px 16px; padding: 10px; border: 1px solid var(--border); border-radius: 2px; }
+.dasha-badge .label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim); }
+.dasha-badge .value { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--green); margin-top: 3px; }
+/* Main */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.statusbar {
+  height: 36px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dim);
+  flex-shrink: 0;
+}
+.statusbar .sep { color: var(--border); }
+.statusbar .val { color: var(--text); }
+.statusbar .live { color: var(--green); font-size: 9px; letter-spacing: 0.1em; }
+.content { flex: 1; overflow-y: auto; padding: 0; }
+.section { padding: 20px 24px; }
+.section-title {
+  font-family: 'Noto Serif JP', serif; font-size: 13px; font-weight: 700;
+  color: var(--gold); letter-spacing: 0.05em; margin-bottom: 16px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: baseline; gap: 10px;
+}
+.section-title .en { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 400; color: var(--dim); letter-spacing: 0.15em; }
+/* Tables */
+.kp-table { width: 100%; border-collapse: collapse; }
+.kp-table th {
+  text-align: left; padding: 6px 10px;
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim);
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace; font-weight: 400;
+}
+.kp-table td {
+  padding: 7px 10px; border-bottom: 1px solid var(--border);
+  font-size: 12px; vertical-align: middle;
+}
+.kp-table tr:hover td { background: var(--bg2); }
+.kp-table .num { font-family: 'IBM Plex Mono', monospace; }
+.kp-table .dim { color: var(--dim); }
+.kp-table .green { color: var(--green); }
+.kp-table .red { color: var(--red); }
+.kp-table .gold { color: var(--gold); }
+.kp-table .blue { color: var(--blue); }
+.kp-table .current { border-left: 2px solid var(--green); }
+/* Dignity pills */
+.dig { padding: 1px 5px; border-radius: 2px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; }
+.dig-exalted { color: var(--green); border: 1px solid var(--green); }
+.dig-moolatrikona { color: #86EFAC; border: 1px solid #86EFAC; }
+.dig-own { color: var(--blue); border: 1px solid var(--blue); }
+.dig-friendly { color: #7DD3FC; border: 1px solid #7DD3FC; }
+.dig-neutral { color: var(--dim); border: 1px solid var(--border); }
+.dig-enemy { color: #FCA5A5; border: 1px solid #FCA5A5; }
+.dig-debilitated { color: var(--red); border: 1px solid var(--red); }
+/* Sig grid */
+.sig-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.sig-cell { border: 1px solid var(--border); padding: 10px; }
+.sig-cell .house-num { font-family: 'IBM Plex Mono', monospace; font-size: 16px; color: var(--dim); }
+.sig-cell .house-sign { font-size: 10px; color: var(--dim); margin-bottom: 6px; }
+.sig-group { margin-top: 4px; font-size: 11px; }
+.sig-group .grp-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--dim); margin-right: 4px; }
+.sig-group .grp-planets { font-family: 'IBM Plex Mono', monospace; }
+/* Yoga cards */
+.yoga-list { display: flex; flex-direction: column; gap: 8px; }
+.yoga-card { border: 1px solid var(--border); padding: 12px; }
+.yoga-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.yoga-name { font-family: 'Noto Serif JP', serif; font-size: 13px; }
+.yoga-cat { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; }
+.yoga-cat.raja { color: var(--gold); }
+.yoga-cat.pancha { color: #FB923C; }
+.yoga-cat.neecha { color: #A78BFA; }
+.yoga-cat.dhana { color: var(--blue); }
+.yoga-cat.kema { color: var(--red); }
+.yoga-cat.other { color: var(--dim); }
+.yoga-desc { font-size: 11px; color: var(--dim); margin-bottom: 6px; }
+.yoga-planets { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--green); }
+.strength-bar { height: 3px; background: var(--border); margin-top: 8px; border-radius: 1px; }
+.strength-fill { height: 100%; background: var(--gold); border-radius: 1px; }
+/* Ruling kv */
+.kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.kv-item { background: var(--bg1); padding: 10px 14px; }
+.kv-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim); margin-bottom: 3px; }
+.kv-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+.rp-set { margin-top: 14px; padding: 10px 14px; border: 1px solid var(--gold); display: flex; gap: 12px; align-items: center; }
+.rp-planet { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--gold); }
+/* Prashna */
+.prashna-form { display: flex; gap: 8px; margin-bottom: 20px; }
+.prashna-form input {
+  flex: 1; background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text); font-size: 13px; padding: 8px 12px; border-radius: 2px; outline: none;
+}
+.prashna-form input:focus { border-color: var(--gold); }
+.prashna-form button {
+  padding: 8px 16px; background: transparent; border: 1px solid var(--gold);
+  color: var(--gold); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; border-radius: 2px;
+}
+.prashna-form button:hover { background: rgba(246,190,59,0.08); }
+.verdict-box { border: 1px solid var(--border); padding: 14px; margin-bottom: 16px; }
+.verdict-title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim); margin-bottom: 8px; }
+.verdict-asc { font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: var(--gold); }
+/* Dasha section */
+.md-header {
+  display: flex; align-items: center; padding: 8px 10px;
+  cursor: pointer; border-bottom: 1px solid var(--border);
+}
+.md-header:hover { background: var(--bg2); }
+.md-arrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--dim); margin-right: 8px; }
+.ad-row { display: flex; padding: 6px 10px 6px 30px; border-bottom: 1px solid var(--border); }
+.ad-row.current-ad { border-left: 2px solid var(--green); }
+/* Range buttons */
+.range-btns { display: flex; gap: 4px; margin-bottom: 16px; }
+.range-btn {
+  padding: 4px 12px; background: transparent; border: 1px solid var(--border);
+  color: var(--dim); font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; border-radius: 2px;
+}
+.range-btn.active { border-color: var(--gold); color: var(--gold); }
+.range-btn:hover { border-color: var(--text); color: var(--text); }
+/* Report */
+.report-pre {
+  background: var(--bg2); border: 1px solid var(--border); padding: 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: pre-wrap;
+  color: var(--text); line-height: 1.6; overflow-y: auto; max-height: 70vh;
+}
+/* Loading overlay */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(5,13,26,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999;
+}
+.loading-inner { font-family: 'IBM Plex Mono', monospace; color: var(--gold); font-size: 14px; letter-spacing: 0.15em; }
+/* Varga tabs */
+.vtabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+.vtab {
+  padding: 6px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;
+  color: var(--dim); border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.vtab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.vtab:hover { color: var(--text); }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg1); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="layout" x-data x-init="$store.app.init()">
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" x-show="$store.app.loading" style="display:none">
+    <div class="loading-inner">CALCULATING...</div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-title">KP</div>
+      <div class="sidebar-sub">天体公文書</div>
+    </div>
+
+    <!-- Birth form -->
+    <div class="birth-form">
+      <label>YEAR</label>
+      <input type="number" x-model.number="$store.app.bd.year" min="1900" max="2100">
+      <div class="row2">
+        <div style="flex:1">
+          <label>MO</label>
+          <input type="number" x-model.number="$store.app.bd.month" min="1" max="12">
+        </div>
+        <div style="flex:1">
+          <label>DAY</label>
+          <input type="number" x-model.number="$store.app.bd.day" min="1" max="31">
+        </div>
+      </div>
+      <div class="row2">
+        <div style="flex:1">
+          <label>HH</label>
+          <input type="number" x-model.number="$store.app.bd.hour" min="0" max="23">
+        </div>
+        <div style="flex:1">
+          <label>MM</label>
+          <input type="number" x-model.number="$store.app.bd.minute" min="0" max="59">
+        </div>
+      </div>
+      <label>TZ (UTC+)</label>
+      <input type="number" x-model.number="$store.app.bd.tz" step="0.5">
+      <div class="row2">
+        <div style="flex:1">
+          <label>LAT</label>
+          <input type="number" x-model.number="$store.app.bd.lat" step="0.0001">
+        </div>
+        <div style="flex:1">
+          <label>LON</label>
+          <input type="number" x-model.number="$store.app.bd.lon" step="0.0001">
+        </div>
+      </div>
+      <button class="calc-btn" @click="$store.app.calculate()" :disabled="$store.app.loading">
+        CALCULATE
+      </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-list">
+      <template x-for="nav in $store.app.navItems" :key="nav.id">
+        <div class="nav-item" :class="{active: $store.app.section===nav.id}"
+          @click="$store.app.section=nav.id; nav.id==='condition' && !$store.app.condition && $store.app.loadCondition('today'); nav.id==='transit' && !$store.app.transit && $store.app.loadTransit()">
+          <span class="nav-en" x-text="nav.en"></span>
+          <span class="nav-ja" x-text="nav.ja"></span>
+        </div>
+      </template>
+    </nav>
+
+    <!-- Current dasha badge -->
+    <div class="dasha-badge" x-show="$store.app.natal">
+      <div class="label">CURRENT DASHA</div>
+      <div class="value" x-text="$store.app.currentDasha()"></div>
+    </div>
+  </aside>
+
+  <!-- Main panel -->
+  <main class="main">
+    <!-- Status bar -->
+    <div class="statusbar">
+      <span x-text="$store.app.statusLabel()"></span>
+      <span class="sep">|</span>
+      <span x-show="$store.app.natal">
+        ASC: <span class="val" x-text="$store.app.natal?.birth?.asc_sign_ja"></span>
+        &nbsp;AYA: <span class="val mono" x-text="$store.app.natal?.birth?.aya + '°'"></span>
+      </span>
+      <span class="sep" x-show="$store.app.natal">|</span>
+      <span x-show="!$store.app.natal" style="color:var(--dim)">出生データを入力してCALCULATEを押してください</span>
+      <span style="margin-left:auto" class="live" x-show="$store.app.natal">LIVE</span>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- ===== PLANETS ===== -->
+      <div class="section" x-show="$store.app.section==='planets'">
+        <div class="section-title">惑星位置 <span class="en">PLANETS</span></div>
+        <table class="kp-table" x-show="$store.app.natal">
+          <thead><tr>
+            <th>惑星</th><th>SIGN</th><th>度数</th><th>ナクシャトラ</th>
+            <th>NL</th><th>SL</th><th>SSL</th><th>室</th><th>品位</th><th>R</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="p in $store.app.natal?.planets" :key="p.abbr">
+              <tr>
+                <td><span class="mono" x-text="p.abbr"></span> <span class="dim" x-text="p.name_ja"></span></td>
+                <td x-text="p.sign_ja"></td>
+                <td class="num" x-text="p.deg+'°'+String(p.min).padStart(2,'0')+'\''+String(p.sec).padStart(2,'0')+'&quot;'"></td>
+                <td class="dim" x-text="p.nak"></td>
+                <td class="num" x-text="p.nl"></td>
+                <td class="num" x-text="p.sl"></td>
+                <td class="num" x-text="p.ssl"></td>
+                <td class="num" x-text="p.house"></td>
+                <td><span :class="'dig dig-'+p.dignity" x-text="p.dignity_ja||p.dignity"></span></td>
+                <td class="num" :class="p.retrograde?'red':'dim'" x-text="p.retrograde?'R':'—'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div x-show="!$store.app.natal" class="dim" style="padding:20px;font-size:11px;">計算してください</div>
+      </div>
+
+      <!-- ===== CUSPS ===== -->
+      <div class="section" x-show="$store.app.section==='cusps'">
+        <div class="section-title">カスプ表 <span class="en">CUSPS</span></div>
+        <table class="kp-table" x-show="$store.app.natal">
+          <thead><tr>
+            <th>カスプ</th><th>SIGN</th><th>度数</th><th>NL</th><th>SL</th><th>SSL</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="c in $store.app.natal?.cusps" :key="c.house">
+              <tr>
+                <td class="num gold" x-text="'H'+c.house"></td>
+                <td x-text="c.sign_ja"></td>
+                <td class="num" x-text="c.deg+'°'+String(c.min).padStart(2,'0')+'\''+String(c.sec).padStart(2,'0')+'&quot;'"></td>
+                <td class="num" x-text="c.nl"></td>
+                <td class="num" x-text="c.sl"></td>
+                <td class="num" x-text="c.ssl"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ===== DASHA ===== -->
+      <div class="section" x-show="$store.app.section==='dasha'">
+        <div class="section-title">ダシャー表 <span class="en">DASHA</span></div>
+        <div x-show="$store.app.natal">
+          <template x-for="md in $store.app.natal?.dashas" :key="md.planet">
+            <div style="margin-bottom:1px">
+              <div class="md-header" :class="md.is_current?'current':''"
+                @click="$store.app.toggleMD(md.planet)"
+                style="border-bottom:1px solid var(--border)">
+                <span class="md-arrow" x-text="$store.app.openMD===md.planet ? '▾' : '▸'"></span>
+                <span class="num" style="width:28px;font-size:13px" :class="md.is_current?'green':''" x-text="md.planet"></span>
+                <span class="dim" style="font-size:11px;margin-left:4px" x-text="md.planet_ja"></span>
+                <span class="num dim" style="margin-left:auto;font-size:11px" x-text="md.start+' — '+md.end"></span>
+                <span class="num" style="margin-left:12px;font-size:11px;width:36px;text-align:right" :class="md.is_current?'green':'dim'" x-text="md.years+'y'"></span>
+              </div>
+              <div x-show="$store.app.openMD===md.planet">
+                <template x-for="ad in md.antardashas" :key="ad.planet">
+                  <div class="ad-row" :class="ad.is_current?'current-ad':''">
+                    <span class="num" style="width:28px" :class="ad.is_current?'green':'dim'" x-text="ad.planet"></span>
+                    <span class="dim" style="font-size:11px;margin-left:4px" x-text="ad.planet_ja"></span>
+                    <span class="num dim" style="margin-left:auto;font-size:11px" x-text="ad.start+' — '+ad.end"></span>
+                    <span class="num dim" style="margin-left:12px;font-size:11px;width:42px;text-align:right" x-text="ad.months+'mo'"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ===== SIGNIFICATORS ===== -->
+      <div class="section" x-show="$store.app.section==='significators'">
+        <div class="section-title">シグニフィケーター <span class="en">SIGNIFICATORS</span></div>
+        <div class="sig-grid" x-show="$store.app.natal">
+          <template x-for="h in Array.from({length:12},(_,i)=>i+1)" :key="h">
+            <div class="sig-cell">
+              <div class="house-num" x-text="'H'+h"></div>
+              <div class="house-sign" x-text="$store.app.natal?.sig[h]?.sign_ja"></div>
+              <template x-for="grp in ['A','B','C','D']" :key="grp">
+                <div class="sig-group">
+                  <span class="grp-label" x-text="grp+':'"></span>
+                  <span class="grp-planets"
+                    :class="grp==='A'?'green':(grp==='D'?'gold':'dim')"
+                    x-text="(Array.isArray($store.app.natal?.sig[h]?.[grp]) ? $store.app.natal.sig[h][grp].join(' ') : $store.app.natal?.sig[h]?.[grp]) || '—'">
+                  </span>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ===== RULING PLANETS ===== -->
+      <div class="section" x-show="$store.app.section==='ruling'">
+        <div class="section-title">支配惑星 <span class="en">RULING PLANETS</span></div>
+        <div x-show="$store.app.natal">
+          <div class="kv-grid">
+            <div class="kv-item">
+              <div class="kv-label">曜日主</div>
+              <div class="kv-value" x-text="$store.app.natal?.ruling?.weekday+' — '+$store.app.natal?.ruling?.day_lord"></div>
+            </div>
+            <div class="kv-item">
+              <div class="kv-label">月星座主</div>
+              <div class="kv-value" x-text="$store.app.natal?.ruling?.moon_sign_ja+' / '+$store.app.natal?.ruling?.moon_sign_lord"></div>
+            </div>
+            <div class="kv-item">
+              <div class="kv-label">月ナクシャトラ主</div>
+              <div class="kv-value" x-text="$store.app.natal?.ruling?.moon_star_lord"></div>
+            </div>
+            <div class="kv-item">
+              <div class="kv-label">ラグナ星座主</div>
+              <div class="kv-value" x-text="$store.app.natal?.ruling?.lagna_sign_ja+' / '+$store.app.natal?.ruling?.lagna_sign_lord"></div>
+            </div>
+            <div class="kv-item">
+              <div class="kv-label">ラグナ星主</div>
+              <div class="kv-value" x-text="$store.app.natal?.ruling?.lagna_star_lord"></div>
+            </div>
+            <div class="kv-item">
+              <div class="kv-label">ラグナサブ主</div>
+              <div class="kv-value" x-text="$store.app.natal?.ruling?.lagna_sub_lord"></div>
+            </div>
+          </div>
+          <div class="rp-set">
+            <span class="kv-label" style="margin-right:8px">RP SET:</span>
+            <template x-for="rp in $store.app.natal?.ruling?.rp_set" :key="rp">
+              <span class="rp-planet" x-text="rp"></span>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SUBLORD TABLE ===== -->
+      <div class="section" x-show="$store.app.section==='sublord'">
+        <div class="section-title">サブロード表 <span class="en">SUB-LORD TABLE</span></div>
+        <div x-show="$store.app.natal">
+          <table class="kp-table">
+            <thead><tr>
+              <th>#</th><th>ナクシャトラ</th><th>NL</th><th>SL</th><th>SSL</th>
+              <th>開始°</th><th>終了°</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="(row, i) in ($store.app.natal?.sub_table || []).slice(0, $store.app.subLimit)" :key="i">
+                <tr>
+                  <td class="num dim" x-text="i+1"></td>
+                  <td class="dim" style="font-size:11px" x-text="row.nak"></td>
+                  <td class="num" x-text="row.nl"></td>
+                  <td class="num" x-text="row.sl"></td>
+                  <td class="num" x-text="row.ssl"></td>
+                  <td class="num" x-text="row.start.toFixed(4)"></td>
+                  <td class="num" x-text="row.end.toFixed(4)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          <div style="padding:12px 0" x-show="$store.app.subLimit < 243">
+            <button class="range-btn" @click="$store.app.subLimit=243">全243件表示</button>
+          </div>
+        </div>
+      </div>
+      <!-- ===== DIGNITY & ASPECTS ===== -->
+      <div class="section" x-show="$store.app.section==='dignity'">
+        <div class="section-title">品位 & アスペクト <span class="en">DIGNITY &amp; ASPECTS</span></div>
+        <div x-show="$store.app.natal" style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px">
+          <!-- Dignity table -->
+          <div>
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:8px">惑星品位</div>
+            <table class="kp-table">
+              <thead><tr><th>惑星</th><th>品位</th><th>Score</th><th>R</th></tr></thead>
+              <tbody>
+                <template x-for="p in $store.app.natal?.planets" :key="p.abbr">
+                  <tr>
+                    <td class="num" x-text="p.abbr"></td>
+                    <td><span :class="'dig dig-'+p.dignity" x-text="p.dignity_ja||p.dignity"></span></td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span class="num" :class="p.dignity_score>0?'green':(p.dignity_score<0?'red':'dim')" x-text="(p.dignity_score>0?'+':'')+p.dignity_score"></span>
+                        <div style="width:40px;height:3px;background:var(--border)">
+                          <div :style="`width:${Math.abs(p.dignity_score)/3*100}%;height:100%;background:${p.dignity_score>0?'var(--green)':'var(--red)'}`"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="num" :class="p.retrograde?'red':'dim'" x-text="p.retrograde?'R':'—'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <!-- Aspects table -->
+          <div>
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:8px">アスペクト</div>
+            <table class="kp-table">
+              <thead><tr><th>P1</th><th>P2</th><th>種類</th><th>偏差</th><th>性質</th><th>強度</th></tr></thead>
+              <tbody>
+                <template x-for="(a, i) in $store.app.natal?.aspects" :key="i">
+                  <tr>
+                    <td class="num" x-text="a.p1"></td>
+                    <td class="num" x-text="a.p2"></td>
+                    <td style="font-size:11px" x-text="a.type"></td>
+                    <td class="num dim" x-text="a.deviation+'°'"></td>
+                    <td>
+                      <span class="num" style="font-size:10px"
+                        :style="a.nature==='soft'?'color:var(--green)':(a.nature==='hard'?'color:var(--red)':'color:var(--gold)')"
+                        x-text="a.nature"></span>
+                    </td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:4px">
+                        <span class="num" style="font-size:11px" x-text="a.strength.toFixed(1)"></span>
+                        <div style="width:30px;height:3px;background:var(--border)">
+                          <div :style="`width:${Math.min(a.strength/20*100,100)}%;height:100%;background:var(--gold)`"></div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TRANSIT ===== -->
+      <div class="section" x-show="$store.app.section==='transit'">
+        <div class="section-title">トランジット <span class="en">TRANSIT</span></div>
+        <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center">
+          <span class="dim" style="font-size:11px">日付:</span>
+          <input type="date" x-model="$store.app.transitDate"
+            style="background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:4px 8px;border-radius:2px;outline:none;">
+          <button class="range-btn active" @click="$store.app.loadTransit()">更新</button>
+        </div>
+        <div x-show="$store.app.transit" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <!-- Transit planets -->
+          <div>
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:8px">トランジット惑星</div>
+            <table class="kp-table">
+              <thead><tr><th>惑星</th><th>SIGN</th><th>度数</th><th>室</th></tr></thead>
+              <tbody>
+                <template x-for="p in $store.app.transit?.transit_planets" :key="p.abbr">
+                  <tr>
+                    <td class="num" x-text="p.abbr"></td>
+                    <td x-text="p.sign_ja"></td>
+                    <td class="num" x-text="p.deg+'°'+String(p.min).padStart(2,'0')+'\''"></td>
+                    <td class="num" x-text="p.house"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <!-- T→N aspects -->
+          <div>
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:8px">T→N アスペクト</div>
+            <table class="kp-table">
+              <thead><tr><th>TR</th><th>NAT</th><th>種類</th><th>偏差</th></tr></thead>
+              <tbody>
+                <template x-for="(a,i) in $store.app.transit?.transit_to_natal" :key="i">
+                  <tr>
+                    <td class="num" x-text="a.transit"></td>
+                    <td class="num" x-text="a.natal"></td>
+                    <td style="font-size:11px" x-text="a.aspect"></td>
+                    <td class="num dim" x-text="a.deviation+'°'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Current dasha -->
+        <div style="margin-top:16px;padding:10px;border:1px solid var(--border)" x-show="$store.app.transit">
+          <span class="dim" style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em">現在ダシャー: </span>
+          <span class="num green" x-text="($store.app.transit?.current_md||'')+ ' / ' +($store.app.transit?.current_ad||'')"></span>
+        </div>
+      </div>
+
+      <!-- ===== PRASHNA ===== -->
+      <div class="section" x-show="$store.app.section==='prashna'">
+        <div class="section-title">プラシュナ <span class="en">PRASHNA / HORARY</span></div>
+        <div class="prashna-form">
+          <input type="text" placeholder="質問を入力してください..." x-model="$store.app.prashnaQ">
+          <button @click="$store.app.loadPrashna()">占う</button>
+        </div>
+        <div x-show="$store.app.prashna">
+          <div class="verdict-box">
+            <div class="verdict-title">チャート時刻: <span class="num" x-text="$store.app.prashna?.chart_time"></span></div>
+            <div style="margin-top:10px">
+              <span class="dim" style="font-size:11px">ASC Sign: </span>
+              <span class="num" x-text="$store.app.prashna?.asc_sign_ja"></span>
+              <span style="margin:0 12px;color:var(--border)">|</span>
+              <span class="dim" style="font-size:11px">ASC Sub Lord: </span>
+              <span class="verdict-asc" x-text="$store.app.prashna?.asc_sub_lord"></span>
+              <span style="margin:0 12px;color:var(--border)">|</span>
+              <span class="dim" style="font-size:11px">ASC SSL: </span>
+              <span class="num gold" x-text="$store.app.prashna?.asc_ssl"></span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px">
+            <div>
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:8px">プラシュナ惑星</div>
+              <table class="kp-table">
+                <thead><tr><th>惑星</th><th>SIGN</th><th>室</th><th>SL</th></tr></thead>
+                <tbody>
+                  <template x-for="p in $store.app.prashna?.planets" :key="p.abbr">
+                    <tr>
+                      <td class="num" x-text="p.abbr"></td>
+                      <td x-text="p.sign_ja"></td>
+                      <td class="num" x-text="p.house"></td>
+                      <td class="num" x-text="p.sl"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:8px">ダシャー (上位5)</div>
+              <table class="kp-table">
+                <thead><tr><th>惑星</th><th>開始</th><th>終了</th></tr></thead>
+                <tbody>
+                  <template x-for="d in $store.app.prashna?.dashas" :key="d.planet">
+                    <tr :class="d.is_current?'current':''">
+                      <td class="num" :class="d.is_current?'green':''" x-text="d.planet+' '+d.planet_ja"></td>
+                      <td class="num dim" x-text="d.start"></td>
+                      <td class="num dim" x-text="d.end"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== WHEEL ===== -->
+      <div class="section" x-show="$store.app.section==='wheel'">
+        <div class="section-title">ホロスコープホイール <span class="en">WHEEL</span></div>
+        <div id="wheel-chart" style="width:100%;height:520px" x-effect="$store.app.section==='wheel' && $store.app.natal && $store.app.drawWheel()"></div>
+      </div>
+      <!-- ===== VARGA ===== -->
+      <div class="section" x-show="$store.app.section==='varga'">
+        <div class="section-title">分割チャート <span class="en">VARGA</span></div>
+        <div x-show="$store.app.natal">
+          <div class="vtabs">
+            <template x-for="v in [{id:'9',label:'D9 ナヴァムシャ'},{id:'2',label:'D2 ホーラ'},{id:'3',label:'D3 ドレッカナ'},{id:'10',label:'D10 ダシャムシャ'},{id:'12',label:'D12 ドワーダシャムシャ'}]" :key="v.id">
+              <div class="vtab" :class="$store.app.vargaTab===v.id?'active':''" @click="$store.app.vargaTab=v.id" x-text="v.label"></div>
+            </template>
+          </div>
+          <table class="kp-table">
+            <thead><tr>
+              <th>惑星</th><th>ネイタル</th><th>バルガ</th><th>バルガ主</th><th>バルゴッタマ</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="row in ($store.app.natal?.vargas?.[$store.app.vargaTab]||[])" :key="row.abbr">
+                <tr>
+                  <td class="num" x-text="row.abbr+' '+row.name_ja"></td>
+                  <td x-text="row.natal_sign_ja"></td>
+                  <td x-text="row.varga_sign_ja"></td>
+                  <td class="num" x-text="row.varga_lord"></td>
+                  <td>
+                    <span x-show="row.vargottama" style="color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:10px">★ VARGOTTAMA</span>
+                    <span x-show="!row.vargottama" class="dim" style="font-size:10px">—</span>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== YOGA ===== -->
+      <div class="section" x-show="$store.app.section==='yoga'">
+        <div class="section-title">ヨーガ <span class="en">YOGAS</span></div>
+        <div x-show="$store.app.natal">
+          <div class="yoga-list">
+            <template x-for="(y, i) in $store.app.natal?.yogas" :key="i">
+              <div class="yoga-card">
+                <div class="yoga-header">
+                  <span class="yoga-name serif" x-text="y.name_ja"></span>
+                  <span class="yoga-cat" :class="y.category" x-text="y.category_ja || y.category"></span>
+                </div>
+                <div class="yoga-desc" x-text="y.desc"></div>
+                <div class="yoga-planets" x-text="y.planets.join(' + ')"></div>
+                <div class="strength-bar">
+                  <div class="strength-fill" :style="'width:'+Math.min(y.strength/10*100,100)+'%'"></div>
+                </div>
+                <div style="margin-top:4px;font-size:9px;color:var(--dim)" x-text="'強度: '+y.strength+'/10'"></div>
+              </div>
+            </template>
+            <div x-show="!$store.app.natal?.yogas?.length" class="dim" style="font-size:11px">ヨーガが検出されませんでした</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CONDITION ===== -->
+      <div class="section" x-show="$store.app.section==='condition'">
+        <div class="section-title">調子チャート <span class="en">CONDITION</span></div>
+        <div class="range-btns">
+          <template x-for="r in [{id:'today',ja:'本日'},{id:'week',ja:'週'},{id:'month',ja:'月'},{id:'year',ja:'年'}]" :key="r.id">
+            <button class="range-btn" :class="$store.app.conditionRange===r.id?'active':''"
+              @click="$store.app.loadCondition(r.id)" x-text="r.ja"></button>
+          </template>
+        </div>
+        <div id="condition-chart" style="width:100%;height:400px"
+          x-effect="$store.app.section==='condition' && $store.app.condition && $store.app.drawCondition()"></div>
+        <div x-show="!$store.app.condition" class="dim" style="font-size:11px;padding:20px">範囲を選択して読み込んでください</div>
+      </div>
+
+      <!-- ===== REPORT ===== -->
+      <div class="section" x-show="$store.app.section==='report'">
+        <div class="section-title">テキストレポート <span class="en">REPORT</span></div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="calc-btn" style="width:auto;padding:7px 20px" @click="$store.app.loadReport()" :disabled="$store.app.loading">
+            レポート生成
+          </button>
+          <button class="range-btn" x-show="$store.app.reportText" @click="navigator.clipboard.writeText($store.app.reportText)">
+            コピー
+          </button>
+          <a x-show="$store.app.reportText"
+            :href="'data:text/plain;charset=utf-8,'+encodeURIComponent($store.app.reportText)"
+            download="kp_report.txt"
+            class="range-btn" style="text-decoration:none;display:inline-block;padding:4px 12px">
+            DL
+          </a>
+        </div>
+        <pre class="report-pre" x-text="$store.app.reportText || '（レポートが生成されていません）'"></pre>
+      </div>
+
+    </div><!-- .content -->
+  </main>
+</div><!-- .layout -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.store('app', {
+    loading: false,
+    section: 'planets',
+    bd: {year:2000, month:5, day:8, hour:15, minute:46, tz:9.0, lat:34.6617, lon:133.9350},
+    natal: null,
+    transit: null,
+    prashna: null,
+    condition: null,
+    conditionRange: 'today',
+    prashnaQ: '',
+    reportText: '',
+    openMD: null,
+    subLimit: 50,
+    vargaTab: '9',
+    transitDate: new Date().toISOString().slice(0,10),
+
+    navItems: [
+      {id:'planets',  en:'PLANETS',  ja:'惑星位置'},
+      {id:'cusps',    en:'CUSPS',    ja:'カスプ'},
+      {id:'dasha',    en:'DASHA',    ja:'ダシャー'},
+      {id:'significators', en:'SIG', ja:'シグニフィケーター'},
+      {id:'ruling',   en:'RULING',   ja:'支配惑星'},
+      {id:'sublord',  en:'SUBLORD',  ja:'サブロード'},
+      {id:'dignity',  en:'DIGNITY',  ja:'品位&アスペクト'},
+      {id:'transit',  en:'TRANSIT',  ja:'トランジット'},
+      {id:'prashna',  en:'PRASHNA',  ja:'プラシュナ'},
+      {id:'wheel',    en:'WHEEL',    ja:'ホイール'},
+      {id:'varga',    en:'VARGA',    ja:'分割チャート'},
+      {id:'yoga',     en:'YOGA',     ja:'ヨーガ'},
+      {id:'condition',en:'CONDITION',ja:'調子チャート'},
+      {id:'report',   en:'REPORT',   ja:'レポート'},
+    ],
+
+    async init() {
+      await this.calculate();
+    },
+
+    async calculate() {
+      this.loading = true;
+      this.natal = null;
+      this.transit = null;
+      this.condition = null;
+      this.prashna = null;
+      try {
+        const resp = await fetch('/api/natal', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(this.bd),
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        this.natal = await resp.json();
+        // Auto-open current MD in dasha view
+        const cur = this.natal.dashas?.find(d => d.is_current);
+        if (cur) this.openMD = cur.planet;
+      } catch(e) {
+        alert('計算エラー: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loadTransit() {
+      if (!this.natal) return;
+      this.loading = true;
+      try {
+        const parts = this.transitDate.split('-');
+        const body = {...this.bd,
+          transit_year: parseInt(parts[0]),
+          transit_month: parseInt(parts[1]),
+          transit_day: parseInt(parts[2]),
+          transit_hour: 12, transit_minute: 0};
+        const resp = await fetch('/api/transit', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        this.transit = await resp.json();
+      } catch(e) {
+        alert('トランジットエラー: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loadPrashna() {
+      this.loading = true;
+      try {
+        const resp = await fetch('/api/prashna', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({...this.bd, question: this.prashnaQ})
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        this.prashna = await resp.json();
+      } catch(e) {
+        alert('プラシュナエラー: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loadCondition(range) {
+      if (!this.natal) return;
+      this.conditionRange = range;
+      this.condition = null;
+      this.loading = true;
+      try {
+        const resp = await fetch('/api/condition', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({...this.bd, range})
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        this.condition = data;
+        setTimeout(() => this.drawCondition(), 50);
+      } catch(e) {
+        alert('調子エラー: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loadReport() {
+      if (!this.natal) return;
+      this.loading = true;
+      try {
+        const resp = await fetch('/api/report', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(this.bd)
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        this.reportText = data.text;
+      } catch(e) {
+        alert('レポートエラー: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    toggleMD(planet) {
+      this.openMD = this.openMD === planet ? null : planet;
+    },
+
+    currentDasha() {
+      if (!this.natal) return '—';
+      const md = this.natal.dashas?.find(d => d.is_current);
+      const ad = md?.antardashas?.find(a => a.is_current);
+      if (!md) return '—';
+      return (ad ? `${md.planet}/${ad.planet}` : md.planet);
+    },
+
+    statusLabel() {
+      if (!this.natal) return 'KP 天体公文書';
+      const b = this.natal.birth;
+      return `${b.year}.${String(b.month).padStart(2,'0')}.${String(b.day).padStart(2,'0')} ${String(b.hour).padStart(2,'0')}:${String(b.minute).padStart(2,'0')} UTC+${b.tz}  |  DASHA: ${this.currentDasha()}`;
+    },
+
+    drawWheel() {
+      const w = this.natal?.wheel;
+      if (!w) return;
+      const el = document.getElementById('wheel-chart');
+      if (!el) return;
+
+      const asc = w.asc_lon;
+      // Convert sidereal longitude to display angle (ASC at left = 180°)
+      const toAngle = lon => {
+        const raw = (lon - asc + 360) % 360;
+        return ((180 - raw) + 360) % 360;
+      };
+      const toRad = deg => deg * Math.PI / 180;
+
+      const shapes = [];
+      // Outer circle
+      shapes.push({type:'circle', xref:'x', yref:'y', x0:-1, y0:-1, x1:1, y1:1,
+        line:{color:'#1E293B', width:1}});
+      // Inner circle (house boundary)
+      shapes.push({type:'circle', xref:'x', yref:'y', x0:-0.6, y0:-0.6, x1:0.6, y1:0.6,
+        line:{color:'#1E293B', width:1}});
+      // House cusp lines
+      for (const c of w.cusps) {
+        const a = toRad(toAngle(c.lon));
+        shapes.push({type:'line', xref:'x', yref:'y',
+          x0: Math.cos(a)*0.6, y0: Math.sin(a)*0.6,
+          x1: Math.cos(a)*1.0, y1: Math.sin(a)*1.0,
+          line:{color: c.house===1 ? '#F6BE3B' : '#4EDEA3', width: c.house===1 ? 2 : 0.8}
+        });
+      }
+
+      // Sign boundaries (every 30°)
+      const SIGNS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+      const SIGNS_JA = ['牡羊','牡牛','双子','蟹','獅子','乙女','天秤','蠍','射手','山羊','水瓶','魚'];
+      for (let i = 0; i < 12; i++) {
+        const lon = i * 30;
+        const a = toRad(toAngle(lon));
+        shapes.push({type:'line', xref:'x', yref:'y',
+          x0: Math.cos(a)*1.0, y0: Math.sin(a)*1.0,
+          x1: Math.cos(a)*1.1, y1: Math.sin(a)*1.1,
+          line:{color:'#1E293B', width:1}
+        });
+      }
+
+      // Planet positions
+      const px = [], py = [], ptxt = [], phover = [];
+      const GLYPHS = {Su:'☉',Mo:'☽',Ma:'♂',Me:'☿',Ju:'♃',Ve:'♀',Sa:'♄',Ra:'☊',Ke:'☋'};
+      // Cluster avoidance
+      const placed = [];
+      for (const p of w.planets) {
+        let a = toRad(toAngle(p.lon));
+        let r = 0.78;
+        // Simple collision offset
+        let tries = 0;
+        while (placed.some(q => Math.abs(q - a) < 0.15) && tries < 6) {
+          a += 0.1; tries++;
+        }
+        placed.push(a);
+        px.push(Math.cos(a) * r);
+        py.push(Math.sin(a) * r);
+        ptxt.push((GLYPHS[p.abbr]||p.abbr) + (p.retrograde ? 'R' : ''));
+        phover.push(`${p.abbr} H${p.house}`);
+      }
+
+      // Sign labels at r=1.06
+      const slx = [], sly = [], stxt = [];
+      for (let i = 0; i < 12; i++) {
+        const midLon = i * 30 + 15;
+        const a = toRad(toAngle(midLon));
+        slx.push(Math.cos(a) * 1.06);
+        sly.push(Math.sin(a) * 1.06);
+        stxt.push(SIGNS[i]);
+      }
+
+      // House number labels at r=0.68
+      const hlx = [], hly = [], htxt = [];
+      for (const c of w.cusps) {
+        const nextC = w.cusps[(c.house % 12)];
+        const midLon = nextC ? (c.lon + nextC.lon) / 2 : c.lon + 15;
+        const a = toRad(toAngle(midLon));
+        hlx.push(Math.cos(a) * 0.68);
+        hly.push(Math.sin(a) * 0.68);
+        htxt.push(String(c.house));
+      }
+
+      Plotly.newPlot('wheel-chart', [
+        {x:px, y:py, text:ptxt, mode:'text', hovertext:phover, hoverinfo:'text',
+         textfont:{color:'#CBD5E1', size:13, family:'IBM Plex Mono'}},
+        {x:slx, y:sly, text:stxt, mode:'text', hoverinfo:'none',
+         textfont:{color:'#4EDEA3', size:11, family:'IBM Plex Mono'}},
+        {x:hlx, y:hly, text:htxt, mode:'text', hoverinfo:'none',
+         textfont:{color:'#64748B', size:10, family:'IBM Plex Mono'}},
+      ], {
+        paper_bgcolor:'#050D1A', plot_bgcolor:'#050D1A',
+        xaxis:{range:[-1.2,1.2], showgrid:false, zeroline:false, visible:false, scaleanchor:'y'},
+        yaxis:{range:[-1.2,1.2], showgrid:false, zeroline:false, visible:false},
+        shapes,
+        margin:{l:10, r:10, t:10, b:10},
+        height: 520,
+        showlegend: false,
+      }, {responsive:true, displayModeBar:false});
+    },
+
+    drawCondition() {
+      const data = this.condition?.data;
+      if (!data || !data.length) return;
+      const el = document.getElementById('condition-chart');
+      if (!el) return;
+
+      const dts = data.map(r => r.dt);
+      const traces = [
+        {name:'OVERALL',  y:data.map(r=>r.overall),  x:dts, mode:'lines', line:{color:'#F6BE3B', width:2}},
+        {name:'CAREER',   y:data.map(r=>r.career),   x:dts, mode:'lines', line:{color:'#93C5FD', width:1}},
+        {name:'HEALTH',   y:data.map(r=>r.health),   x:dts, mode:'lines', line:{color:'#4EDEA3', width:1}},
+        {name:'FORTUNE',  y:data.map(r=>r.fortune),  x:dts, mode:'lines', line:{color:'#F9A8D4', width:1}},
+      ];
+      Plotly.newPlot('condition-chart', traces, {
+        paper_bgcolor:'#050D1A', plot_bgcolor:'#050D1A',
+        xaxis:{gridcolor:'#1E293B', tickfont:{color:'#64748B', family:'IBM Plex Mono', size:10}, linecolor:'#1E293B'},
+        yaxis:{gridcolor:'#1E293B', tickfont:{color:'#64748B', family:'IBM Plex Mono', size:10}, linecolor:'#1E293B',
+               range:[-100,100], zeroline:true, zerolinecolor:'#1E293B', zerolinewidth:1},
+        legend:{font:{color:'#CBD5E1', family:'IBM Plex Mono', size:10}, bgcolor:'transparent'},
+        margin:{l:50, r:20, t:20, b:50},
+        height:400,
+      }, {responsive:true, displayModeBar:false});
+    },
+  });
+});
+</script>
+</body>
+</html>

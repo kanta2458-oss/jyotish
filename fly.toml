@@ -1,19 +1,23 @@
-# Fly.io デプロイ設定
-# fly launch で自動生成される app 名に合わせて編集してください
-app = "kp-jyotish"
-primary_region = "nrt"   # 東京リージョン
+# fly.toml app configuration file generated for kp-jyotish-kanta on 2026-04-09T13:56:52Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'kp-jyotish-kanta'
+primary_region = 'nrt'
 
 [build]
-  dockerfile = "Dockerfile"
 
 [http_service]
-  internal_port = 8501
+  internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
-  memory = "512mb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 256

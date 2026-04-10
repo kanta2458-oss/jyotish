@@ -139,8 +139,9 @@ async def cmd_sync(args):
         )
         await client.sources.add_text(
             nb.id,
-            text=source_text,
             title=f"KPレポート {date_str}",
+            content=source_text,
+            wait=True,
         )
         print("KPレポート追加完了")
 
@@ -150,13 +151,14 @@ async def cmd_sync(args):
             # 全ファイルを1つのテキストに結合（ソース数節約）
             combined = []
             for f in KNOWLEDGE_FILES:
-                content = f.read_text(encoding="utf-8")
-                combined.append(f"# {f.stem}\n\n{content}")
+                file_content = f.read_text(encoding="utf-8")
+                combined.append(f"# {f.stem}\n\n{file_content}")
             knowledge_text = "\n\n---\n\n".join(combined)
             await client.sources.add_text(
                 nb.id,
-                text=knowledge_text,
                 title="KP占星術 知識ベース",
+                content=knowledge_text,
+                wait=True,
             )
             print("知識ベース追加完了")
 

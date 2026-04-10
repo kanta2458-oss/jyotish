@@ -14,7 +14,7 @@ from typing import Any, Optional
 
 import swisseph as swe
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -531,3 +531,54 @@ def report(bd: BirthData):
         return JSONResponse({'text': text})
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# /api/notebooklm  — combined download for NotebookLM (report + knowledge base)
+# ---------------------------------------------------------------------------
+
+REPO_ROOT = Path(__file__).parent.parent
+KNOWLEDGE_GLOBS = [
+    "00_introduction/*.md",
+    "01_foundations/*.md",
+    "02_chart-basics/*.md",
+    "03_intermediate/*.md",
+    "04_kp-system/*.md",
+    "glossary.md",
+]
+
+
+@app.post("/api/notebooklm")
+def notebooklm_package(bd: BirthData):
+    """Return a single plain-text file combining the KP report and knowledge base.
+    Suitable for direct upload to NotebookLM as a text source."""
+    try:
+        report_text = kp.generate_report(
+            bd.year, bd.month, bd.day, bd.hour, bd.minute, bd.tz, bd.lat, bd.lon
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    import datetime as dt
+    now_str = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    date_str = f"{bd.year}-{bd.month:02d}-{bd.day:02d}"
+
+    sections = [
+        f"# KP占星術チャート分析レポート\n生成日時: {now_str}\n\n{report_text}",
+    ]
+
+    for pattern in KNOWLEDGE_GLOBS:
+        for f in sorted(REPO_ROOT.glob(pattern)):
+            try:
+                content = f.read_text(encoding="utf-8")
+                sections.append(f"# {f.stem}\n\n{content}")
+            except Exception:
+                pass
+
+    combined = "\n\n---\n\n".join(sections)
+    filename = f"kp_notebooklm_{date_str}.txt"
+
+    return PlainTextResponse(
+        content=combined,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

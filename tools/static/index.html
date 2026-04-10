@@ -734,6 +734,9 @@ html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: 
             class="range-btn" style="text-decoration:none;display:inline-block;padding:4px 12px">
             DL
           </a>
+          <button class="range-btn" x-show="$store.app.reportText" @click="$store.app.downloadNotebookLM()" style="color:var(--gold)">
+            NotebookLM用DL
+          </button>
         </div>
         <pre class="report-pre" x-text="$store.app.reportText || '（レポートが生成されていません）'"></pre>
       </div>
@@ -878,6 +881,29 @@ document.addEventListener('alpine:init', () => {
         this.reportText = data.text;
       } catch(e) {
         alert('レポートエラー: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async downloadNotebookLM() {
+      this.loading = true;
+      try {
+        const resp = await fetch('/api/notebooklm', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(this.bd)
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const blob = await resp.blob();
+        const cd = resp.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename="([^"]+)"/);
+        const filename = m ? m[1] : 'kp_notebooklm.txt';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+      } catch(e) {
+        alert('ダウンロードエラー: ' + e.message);
       } finally {
         this.loading = false;
       }

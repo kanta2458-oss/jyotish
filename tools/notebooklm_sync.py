@@ -5,16 +5,16 @@ KP Jyotish → NotebookLM 連携スクリプト
 
 使い方:
     # 1. 初回ログイン（ブラウザが開くのでGoogleアカウントでログイン）
-    python3 notebooklm_sync.py login
+    python notebooklm_sync.py login
 
     # 2. 自分のチャートをNotebookLMに送る
-    python3 notebooklm_sync.py sync
+    python notebooklm_sync.py sync
 
     # 3. 誕生データを指定してノートブックを作る
-    python3 notebooklm_sync.py sync --year 2000 --month 5 --day 8 --hour 15 --minute 46 --tz 9
+    python notebooklm_sync.py sync --year 2000 --month 5 --day 8 --hour 15 --minute 46 --tz 9
 
     # 4. 既存ノートブックに追記する（IDを指定）
-    python3 notebooklm_sync.py sync --notebook-id <ID>
+    python notebooklm_sync.py sync --notebook-id <ID>
 """
 
 from __future__ import annotations
@@ -23,6 +23,8 @@ import asyncio
 import datetime
 import subprocess
 import sys
+import urllib.request
+import json
 from pathlib import Path
 
 # ───────────────────────────────────────────
@@ -30,6 +32,9 @@ from pathlib import Path
 # ───────────────────────────────────────────
 DEFAULT = dict(year=2000, month=5, day=8, hour=15, minute=46,
                tz=9.0, lat=34.6617, lon=133.9350)
+
+# Render にデプロイ済みのAPIサーバー
+API_BASE = "https://jyotish-hawn.onrender.com"
 
 REPO_ROOT = Path(__file__).parent.parent
 KNOWLEDGE_FILES = sorted([
@@ -69,23 +74,34 @@ async def cmd_sync(args):
         print("notebooklm-py をインストールしてください: pip install notebooklm-py")
         sys.exit(1)
 
-    # ── KP計算 ──────────────────────────────
-    sys.path.insert(0, str(Path(__file__).parent))
-    import kp_calculator as kp
-
+    # ── KPレポートをAPIから取得 ──────────────
     bd = dict(
         year=args.year, month=args.month, day=args.day,
         hour=args.hour, minute=args.minute, tz=args.tz,
         lat=args.lat, lon=args.lon
     )
-    print(f"KP計算中: {bd['year']}-{bd['month']:02d}-{bd['day']:02d} "
+    print(f"KPレポート取得中: {bd['year']}-{bd['month']:02d}-{bd['day']:02d} "
           f"{bd['hour']:02d}:{bd['minute']:02d} UTC+{bd['tz']}")
+    print(f"  APIサーバー: {API_BASE}")
+    print("  (初回は起動に30秒かかる場合があります...)")
 
-    report_text = kp.generate_report(
-        bd['year'], bd['month'], bd['day'],
-        bd['hour'], bd['minute'], bd['tz'], bd['lat'], bd['lon']
+    payload = json.dumps(bd).encode("utf-8")
+    req = urllib.request.Request(
+        f"{API_BASE}/api/report",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
-    print(f"レポート生成完了 ({len(report_text)} 文字)")
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        report_text = data["text"]
+    except Exception as e:
+        print(f"APIエラー: {e}")
+        print("Renderサーバーが停止している可能性があります。")
+        print(f"{API_BASE}/ をブラウザで開いてサーバーを起動してから再実行してください。")
+        sys.exit(1)
+    print(f"レポート取得完了 ({len(report_text)} 文字)")
 
     # ── NotebookLM 接続 ─────────────────────
     print("NotebookLMに接続中...")

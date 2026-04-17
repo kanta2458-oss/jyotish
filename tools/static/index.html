@@ -314,6 +314,22 @@ html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: 
       </div>
       <label>TZ (UTC+)</label>
       <input type="number" x-model.number="$store.app.bd.tz" step="0.5">
+      <label>出生地（都市名）</label>
+      <div style="display:flex;gap:4px">
+        <input type="text" x-model="$store.app.cityQuery"
+          placeholder="例: 岡山市"
+          style="flex:1"
+          @keydown.enter="$store.app.geocodeCity()">
+        <button @click="$store.app.geocodeCity()"
+          :disabled="$store.app.geocoding"
+          style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:4px 8px;font-size:10px;cursor:pointer;white-space:nowrap;border-radius:2px">
+          <span x-text="$store.app.geocoding ? '...' : '検索'"></span>
+        </button>
+      </div>
+      <div x-show="$store.app.cityResult" x-text="$store.app.cityResult"
+        style="font-size:10px;color:var(--green);margin-top:3px;line-height:1.4"></div>
+      <div x-show="$store.app.cityError" x-text="$store.app.cityError"
+        style="font-size:10px;color:var(--red);margin-top:3px"></div>
       <div class="row2">
         <div style="flex:1">
           <label>LAT</label>
@@ -817,6 +833,10 @@ document.addEventListener('alpine:init', () => {
     conditionRange: 'today',
     prashnaQ: '',
     reportText: '',
+    cityQuery: '',
+    cityResult: '',
+    cityError: '',
+    geocoding: false,
     openMD: null,
     subLimit: 50,
     vargaTab: '9',
@@ -943,6 +963,39 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.loading = false;
       }
+    },
+
+    async geocodeCity() {
+      const q = this.cityQuery.trim();
+      if (!q) return;
+      this.geocoding = true;
+      this.cityResult = '';
+      this.cityError = '';
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=ja`;
+        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await resp.json();
+        if (!data.length) {
+          this.cityError = '見つかりませんでした。別の都市名を試してください。';
+          return;
+        }
+        const r = data[0];
+        this.bd.lat = Math.round(parseFloat(r.lat) * 10000) / 10000;
+        this.bd.lon = Math.round(parseFloat(r.lon) * 10000) / 10000;
+        const tz = this._guessTimezone(this.bd.lon);
+        this.bd.tz = tz;
+        this.cityResult = `✓ ${r.display_name.split(',').slice(0,3).join(', ')}  (UTC+${tz})`;
+      } catch(e) {
+        this.cityError = '検索エラー。通信を確認してください。';
+      } finally {
+        this.geocoding = false;
+      }
+    },
+
+    _guessTimezone(lon) {
+      // Simple longitude-based UTC offset guess (±30min rounding)
+      const raw = lon / 15;
+      return Math.round(raw * 2) / 2;
     },
 
     async downloadNotebookLM() {

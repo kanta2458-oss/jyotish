@@ -1,0 +1,1322 @@
+[
+  {
+    "index": 1,
+    "name_sa": "Ashwini",
+    "name_ja": "アシュヴィニー",
+    "lord": "Ke",
+    "lord_ja": "ケートゥ",
+    "sign_range": "Aries 0°00' - 13°20'",
+    "deity": "Ashwini Kumaras",
+    "deity_ja": "アシュヴィニー双神（天界の医師）",
+    "symbol": "馬の頭",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "vaishya",
+    "nature_ja": "迅速・治癒・新しい始まり",
+    "body_part": "膝",
+    "direction": "south",
+    "keywords": [
+      "healing",
+      "speed",
+      "pioneering",
+      "initiation"
+    ],
+    "personality_ja": "行動力と好奇心に溢れ、何事も素早く着手する。治癒力や救済の本能を持つ。自立心が強く、先駆者としての資質がある。ただし飽きっぽい面も。",
+    "career_ja": "医療・救急・スポーツ・輸送・馬術・獣医・ヒーリング関連",
+    "relationships_ja": "情熱的だが長続きしにくい。刺激を求め、パートナーへの独立性を重視する。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "行動・自立・勇気"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "物質的安定・美・治癒力"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "知性・コミュニケーション・機敏さ"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "感情・母性・保護本能"
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "name_sa": "Bharani",
+    "name_ja": "バラニー",
+    "lord": "Ve",
+    "lord_ja": "金星",
+    "sign_range": "Aries 13°20' - 26°40'",
+    "deity": "Yama",
+    "deity_ja": "ヤマ（死と正義の神）",
+    "symbol": "女性器（Yoni）",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "mleccha",
+    "nature_ja": "変容・生死・責任・判断",
+    "body_part": "頭部（下部）",
+    "direction": "west",
+    "keywords": [
+      "transformation",
+      "responsibility",
+      "sexuality",
+      "death_rebirth"
+    ],
+    "personality_ja": "生と死の境界に生きる深い魂。責任感が強く、道徳的判断力に優れる。強烈な内的エネルギーと変容への衝動を持つ。抑圧されると爆発しやすい。",
+    "career_ja": "法律・裁判・医療（産科・産婦人科）・芸術・エソテリック・心理学",
+    "relationships_ja": "情熱的で独占欲が強い。深い絆を求め、表面的な関係を嫌う。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "権威・創造性・誇り"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "分析・奉仕・精密さ"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "均衡・美・正義"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "変容・秘密・深層心理"
+      }
+    ]
+  },
+  {
+    "index": 3,
+    "name_sa": "Krittika",
+    "name_ja": "クリッティカー",
+    "lord": "Su",
+    "lord_ja": "太陽",
+    "sign_range": "Aries 26°40' - Taurus 10°00'",
+    "deity": "Agni",
+    "deity_ja": "アグニ（火の神）",
+    "symbol": "刃・炎",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "brahmin",
+    "nature_ja": "浄化・切断・栄養・燃焼",
+    "body_part": "臀部・腰",
+    "direction": "north",
+    "keywords": [
+      "purification",
+      "cutting",
+      "nurturing",
+      "determination"
+    ],
+    "personality_ja": "鋭い判断力と批判精神を持つ。妥協しない意志の強さ。火のような情熱で正義を貫く。養育力と破壊力が共存する複雑な気質。",
+    "career_ja": "軍事・外科・料理・冶金・批評家・指導者・宗教家",
+    "relationships_ja": "厳格だが深く愛情深い。批判的になりすぎる傾向。家族への責任感が強い。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学・理想・探求"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "実用性・忍耐・権威"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "改革・独自性・集団"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神性・奉仕・溶解"
+      }
+    ]
+  },
+  {
+    "index": 4,
+    "name_sa": "Rohini",
+    "name_ja": "ローヒニー",
+    "lord": "Mo",
+    "lord_ja": "月",
+    "sign_range": "Taurus 10°00' - 23°20'",
+    "deity": "Brahma/Prajapati",
+    "deity_ja": "ブラフマー（創造神）",
+    "symbol": "牛車・神殿",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "shudra",
+    "nature_ja": "成長・豊穣・美・創造",
+    "body_part": "脛・ふくらはぎ",
+    "direction": "east",
+    "keywords": [
+      "beauty",
+      "fertility",
+      "growth",
+      "sensuality",
+      "creativity"
+    ],
+    "personality_ja": "豊かな感受性と美的センス。物質的豊かさと創造力に恵まれる。官能的で人を惹きつける魅力がある。固定性が強く、変化を嫌う傾向。",
+    "career_ja": "芸術・農業・食品・美容・音楽・ファッション・不動産",
+    "relationships_ja": "深い愛情と官能性。所有欲が強く嫉妬深い面も。安定した関係を好む。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "行動力・開拓・情熱"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "安定・豊穣・物質"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "機知・変化・コミュニケーション"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "感情・母性・保護"
+      }
+    ]
+  },
+  {
+    "index": 5,
+    "name_sa": "Mrigashira",
+    "name_ja": "ムリガシラー",
+    "lord": "Ma",
+    "lord_ja": "火星",
+    "sign_range": "Taurus 23°20' - Gemini 6°40'",
+    "deity": "Soma",
+    "deity_ja": "ソーマ（月神・神酒の神）",
+    "symbol": "鹿の頭",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "farmer",
+    "nature_ja": "探求・感受性・情緒・美",
+    "body_part": "目・眉",
+    "direction": "south",
+    "keywords": [
+      "searching",
+      "sensitivity",
+      "restlessness",
+      "beauty_seeking"
+    ],
+    "personality_ja": "永遠に何かを探し求める魂。美と真実への飽くなき好奇心。繊細で感受性豊か。神秘的なものへの親和性が高い。定着が苦手で移動を好む。",
+    "career_ja": "旅行・探検・詩・音楽・心理学・エソテリック・研究",
+    "relationships_ja": "理想を求め続けるため、現実の関係に満足しにくい。ロマンチックで詩的。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "自己表現・誇り・創造"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "精密・分析・奉仕"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "美・均衡・関係性"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "深層・変容・神秘"
+      }
+    ]
+  },
+  {
+    "index": 6,
+    "name_sa": "Ardra",
+    "name_ja": "アールドラー",
+    "lord": "Ra",
+    "lord_ja": "ラーフ",
+    "sign_range": "Gemini 6°40' - 20°00'",
+    "deity": "Rudra",
+    "deity_ja": "ルドラ（嵐と破壊の神・シヴァの側面）",
+    "symbol": "涙・ダイヤモンド",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "butcher",
+    "nature_ja": "嵐・変容・破壊と再生・涙",
+    "body_part": "目・頭部上部",
+    "direction": "west",
+    "keywords": [
+      "storm",
+      "destruction",
+      "renewal",
+      "intensity",
+      "research"
+    ],
+    "personality_ja": "嵐のような変容のエネルギーを持つ。知的探求と破壊衝動が共存。深い苦しみから真実を見出す魂。既成概念を壊し、新たな視点をもたらす。",
+    "career_ja": "科学・研究・テクノロジー・外科・革命的思想家・心理療法",
+    "relationships_ja": "激しい感情の波。破壊と再生を繰り返す関係パターン。変容を共にできる相手を求める。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学的探求・理想主義"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "構造的変革・忍耐"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "革新・集合知・改革"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "溶解・精神性・涙からの再生"
+      }
+    ]
+  },
+  {
+    "index": 7,
+    "name_sa": "Punarvasu",
+    "name_ja": "プナルヴァス",
+    "lord": "Ju",
+    "lord_ja": "木星",
+    "sign_range": "Gemini 20°00' - Cancer 3°20'",
+    "deity": "Aditi",
+    "deity_ja": "アディティ（無限の空・神々の母）",
+    "symbol": "矢筒・家",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "vaishya",
+    "nature_ja": "再生・帰還・楽観性・拡張",
+    "body_part": "指・鼻",
+    "direction": "north",
+    "keywords": [
+      "renewal",
+      "return",
+      "optimism",
+      "expansion",
+      "home"
+    ],
+    "personality_ja": "何度でも立ち上がる回復力と楽観性。放浪の後に故郷に帰るテーマ。精神的豊かさと知恵を求める。寛容で哲学的。物質より精神を重視。",
+    "career_ja": "教育・哲学・宗教・旅行業・作家・占星術師・カウンセラー",
+    "relationships_ja": "自由と絆の両立を求める。精神的な繋がりを重視。束縛を嫌うが深く愛する。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "再出発・冒険・独立"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "物質的安定への帰還"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "知的探求・旅・発見"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "魂の家への帰還・精神的根源"
+      }
+    ]
+  },
+  {
+    "index": 8,
+    "name_sa": "Pushya",
+    "name_ja": "プシュヤ",
+    "lord": "Sa",
+    "lord_ja": "土星",
+    "sign_range": "Cancer 3°20' - 16°40'",
+    "deity": "Brihaspati",
+    "deity_ja": "ブリハスパティ（神々の師・木星の神格化）",
+    "symbol": "牛の乳房・花",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "kshatriya",
+    "nature_ja": "養育・保護・宗教・慈悲",
+    "body_part": "顔・口",
+    "direction": "east",
+    "keywords": [
+      "nourishment",
+      "protection",
+      "religion",
+      "compassion",
+      "purity"
+    ],
+    "personality_ja": "27宿中で最も吉祥とされる。養育と奉仕の精神。宗教的な敬虔さと高い道徳心。人々を支える献身的なエネルギー。物質より霊的充実を重視。",
+    "career_ja": "宗教・教育・医療・福祉・農業・食品・カウンセリング",
+    "relationships_ja": "献身的で愛情深い。相手の世話をすることに喜びを見出す。時に過保護になる。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "慈善・誇り・宗教的権威"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "奉仕・精密・健康"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "正義・均衡・調和"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "深い慈悲・変容・秘教的知恵"
+      }
+    ]
+  },
+  {
+    "index": 9,
+    "name_sa": "Ashlesha",
+    "name_ja": "アシュレーシャー",
+    "lord": "Me",
+    "lord_ja": "水星",
+    "sign_range": "Cancer 16°40' - 30°00'",
+    "deity": "Nagas",
+    "deity_ja": "ナーガ（蛇神族）",
+    "symbol": "蛇の抱擁・コイル",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "mleccha",
+    "nature_ja": "蛇の知恵・毒と癒し・洞察",
+    "body_part": "耳・骨髄",
+    "direction": "south",
+    "keywords": [
+      "serpent_wisdom",
+      "penetration",
+      "healing_poison",
+      "insight",
+      "kundalini"
+    ],
+    "personality_ja": "蛇のような鋭い洞察と智慧。毒にも薬にもなる二面性。人の深層を見抜く力。エゴの境界が溶ける体験。クンダリーニ・シャクティとの関連。巧みだが時に操作的。",
+    "career_ja": "占星術・心理学・医療（毒物・薬学）・エソテリック・諜報・研究",
+    "relationships_ja": "強烈な引力と毒性を持つ関係。嫉妬と依存の傾向。変容的な絆を生む。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学的な蛇の知恵"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "構造的な巧みさ・権力"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "集合的な変容力"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神的溶解・神秘的洞察"
+      }
+    ]
+  },
+  {
+    "index": 10,
+    "name_sa": "Magha",
+    "name_ja": "マガー",
+    "lord": "Ke",
+    "lord_ja": "ケートゥ",
+    "sign_range": "Leo 0°00' - 13°20'",
+    "deity": "Pitrs",
+    "deity_ja": "ピトリ（先祖・祖霊）",
+    "symbol": "王座・王室",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "shudra",
+    "nature_ja": "先祖・権威・伝統・王権",
+    "body_part": "鼻・唇",
+    "direction": "west",
+    "keywords": [
+      "ancestors",
+      "authority",
+      "tradition",
+      "royalty",
+      "pride"
+    ],
+    "personality_ja": "先祖と伝統への深い繋がり。王のような威厳と誇り。過去の知恵を体現する。強い自我と権威への欲求。家系と血統を重視する。",
+    "career_ja": "政治・行政・伝統芸能・祖先研究・神社仏閣・歴史学",
+    "relationships_ja": "王者のような威厳で接する。家族と先祖を大切にする。誇り高く、屈辱を嫌う。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "王者の行動力・パイオニア精神"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "物質的王権・豊かさ"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "知的権威・王の言葉"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "先祖の保護・家族の王"
+      }
+    ]
+  },
+  {
+    "index": 11,
+    "name_sa": "Purva Phalguni",
+    "name_ja": "プールヴァ・パールグニー",
+    "lord": "Ve",
+    "lord_ja": "金星",
+    "sign_range": "Leo 13°20' - 26°40'",
+    "deity": "Bhaga",
+    "deity_ja": "バガ（富と結婚の神）",
+    "symbol": "ハンモック・寝台の前脚",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "brahmin",
+    "nature_ja": "休息・享楽・創造・愛",
+    "body_part": "性器・左手",
+    "direction": "north",
+    "keywords": [
+      "pleasure",
+      "creativity",
+      "luxury",
+      "love",
+      "relaxation"
+    ],
+    "personality_ja": "享楽と美への愛。創造的表現と芸術への情熱。愛と豊かさの中で輝く。休息と遊びを重視する。自己表現が自然で魅力的。",
+    "career_ja": "芸術・エンターテインメント・美容・音楽・恋愛カウンセラー",
+    "relationships_ja": "愛情豊かで官能的。ロマンスと結婚に恵まれる。享楽的な関係を好む。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "自己表現・舞台・創造的喜び"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "美の精密さ・技芸"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "愛と美の均衡・パートナーシップ"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "深い官能性・変容的な愛"
+      }
+    ]
+  },
+  {
+    "index": 12,
+    "name_sa": "Uttara Phalguni",
+    "name_ja": "ウッタラ・パールグニー",
+    "lord": "Su",
+    "lord_ja": "太陽",
+    "sign_range": "Leo 26°40' - Virgo 10°00'",
+    "deity": "Aryaman",
+    "deity_ja": "アリヤマン（友情・契約・結婚の神）",
+    "symbol": "寝台の後脚",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "kshatriya",
+    "nature_ja": "友情・契約・奉仕・誠実",
+    "body_part": "右手・左腕",
+    "direction": "east",
+    "keywords": [
+      "friendship",
+      "service",
+      "commitment",
+      "prosperity",
+      "social"
+    ],
+    "personality_ja": "誠実な友情と社会への奉仕。契約と約束を重んじる。人々を繋ぐ役割。物質的繁栄と精神的充実を両立させる力。",
+    "career_ja": "社会事業・外交・公共サービス・教育・医療・結婚カウンセラー",
+    "relationships_ja": "忠実で約束を守る。友情から愛が深まる。長期的な関係を好む。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "高尚な友情・哲学的奉仕"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "社会的責任・実務的貢献"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "集合的奉仕・人道主義"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神的な友情・無条件の奉仕"
+      }
+    ]
+  },
+  {
+    "index": 13,
+    "name_sa": "Hasta",
+    "name_ja": "ハスタ",
+    "lord": "Mo",
+    "lord_ja": "月",
+    "sign_range": "Virgo 10°00' - 23°20'",
+    "deity": "Savitr",
+    "deity_ja": "サヴィトリ（太陽の創造的側面）",
+    "symbol": "手",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "vaishya",
+    "nature_ja": "技巧・手芸・機転・巧みさ",
+    "body_part": "手・指",
+    "direction": "south",
+    "keywords": [
+      "dexterity",
+      "skill",
+      "craftsmanship",
+      "humor",
+      "cleverness"
+    ],
+    "personality_ja": "手先の器用さと技術的巧みさ。ユーモアと機知に富む。精密な作業を好む。笑いで人を癒す才能。物真似・話芸・手仕事に秀でる。",
+    "career_ja": "職人・外科医・芸術家・コメディアン・マッサージ師・手工芸",
+    "relationships_ja": "ユーモアと柔軟性で関係を和ませる。手でのスキンシップを重視する。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "機敏な手の動き・行動力"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "美しい手仕事・工芸"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "コミュニケーションの技・話芸"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "癒しの手・保護・母性的技巧"
+      }
+    ]
+  },
+  {
+    "index": 14,
+    "name_sa": "Chitra",
+    "name_ja": "チトラー",
+    "lord": "Ma",
+    "lord_ja": "火星",
+    "sign_range": "Virgo 23°20' - Libra 6°40'",
+    "deity": "Tvashtr",
+    "deity_ja": "トヴァシュトリ（神々の職人・創造の神）",
+    "symbol": "明るい宝石・真珠",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "farmer",
+    "nature_ja": "輝き・美・創造・技芸",
+    "body_part": "額・頸部",
+    "direction": "west",
+    "keywords": [
+      "brilliance",
+      "beauty",
+      "craftsmanship",
+      "art",
+      "illusion"
+    ],
+    "symbol_note": "マーヤ（幻）の象徴でもある",
+    "personality_ja": "輝く美しさと芸術的才能。完璧な創造物を生み出す職人気質。外見の美しさへの強いこだわり。独創的でオリジナリティを重視。マーヤ（幻影）とのかかわり。",
+    "career_ja": "建築・デザイン・ファッション・宝飾・美術・映像・舞台芸術",
+    "relationships_ja": "美しいパートナーを求める。外見と内面の一致を理想とする。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "創造的な輝き・自己表現"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "精密な美・技術的完璧さ"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "調和の美・パートナーとの創造"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "深い美の探求・神秘的芸術"
+      }
+    ]
+  },
+  {
+    "index": 15,
+    "name_sa": "Swati",
+    "name_ja": "スワーティー",
+    "lord": "Ra",
+    "lord_ja": "ラーフ",
+    "sign_range": "Libra 6°40' - 20°00'",
+    "deity": "Vayu",
+    "deity_ja": "ヴァーユ（風の神）",
+    "symbol": "風にそよぐ若い芽",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "butcher",
+    "nature_ja": "独立・自由・柔軟・移動",
+    "body_part": "胸部",
+    "direction": "north",
+    "keywords": [
+      "independence",
+      "freedom",
+      "flexibility",
+      "movement",
+      "trade"
+    ],
+    "personality_ja": "風のような自由と独立心。柔軟な適応力。商業的才能と外交センス。どんな環境にも根を張る強さ。個人の自立と移動への強い欲求。",
+    "career_ja": "貿易・外交・航空・旅行・フリーランス・カウンセリング",
+    "relationships_ja": "自由を愛し、束縛を嫌う。独立した関係性を好む。風のように来ては去る。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "自由な精神・遠方への旅"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "独立した商業・構造的な自由"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "集合的な自由・革新"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神的な漂流・無形の自由"
+      }
+    ]
+  },
+  {
+    "index": 16,
+    "name_sa": "Vishakha",
+    "name_ja": "ヴィシャーカー",
+    "lord": "Ju",
+    "lord_ja": "木星",
+    "sign_range": "Libra 20°00' - Scorpio 3°20'",
+    "deity": "Indra/Agni",
+    "deity_ja": "インドラとアグニ（力と火の神）",
+    "symbol": "勝利の門・フォーク",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "mleccha",
+    "nature_ja": "目標達成・粘り強さ・収穫",
+    "body_part": "腕",
+    "direction": "east",
+    "keywords": [
+      "goal_achievement",
+      "persistence",
+      "jealousy",
+      "harvest",
+      "triumph"
+    ],
+    "personality_ja": "目標に向かって執念深く努力する。嫉妬心と競争心が強い。二面性（天秤と蠍の橋渡し）。目的を達成するまで諦めない粘り強さ。",
+    "career_ja": "政治・法律・競技・研究・軍事・宗教的指導者",
+    "relationships_ja": "嫉妬深く独占欲が強い。ライバルを意識する。勝利の後に真の愛を開く。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "戦う目標・勇敢な達成"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "物質的な目標・豊かさの収穫"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "知的達成・言葉の力"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "変容的な達成・深い勝利"
+      }
+    ]
+  },
+  {
+    "index": 17,
+    "name_sa": "Anuradha",
+    "name_ja": "アヌラーダー",
+    "lord": "Sa",
+    "lord_ja": "土星",
+    "sign_range": "Scorpio 3°20' - 16°40'",
+    "deity": "Mitra",
+    "deity_ja": "ミトラ（友情・契約の神）",
+    "symbol": "蓮の花",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "shudra",
+    "nature_ja": "友情・献身・数への親和・社交",
+    "body_part": "胸部・乳房",
+    "direction": "south",
+    "keywords": [
+      "friendship",
+      "devotion",
+      "cooperation",
+      "organization",
+      "balance"
+    ],
+    "personality_ja": "深い友情と献身の心。組織力と社交性。深さと軽さのバランス。泥の中から咲く蓮のように、困難の中で美しさを保つ。協力と調和を生み出す。",
+    "career_ja": "社会活動・組織運営・心理学・占星術・秘密結社・国際関係",
+    "relationships_ja": "深い友情から愛へ。忠実で献身的。組織やグループの絆を大切にする。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "誠実な友情・組織のリーダー"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "奉仕と分析による友情"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "調和と均衡・社交的絆"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "深い変容的友情・秘密の絆"
+      }
+    ]
+  },
+  {
+    "index": 18,
+    "name_sa": "Jyeshtha",
+    "name_ja": "ジェーシュタ",
+    "lord": "Me",
+    "lord_ja": "水星",
+    "sign_range": "Scorpio 16°40' - 30°00'",
+    "deity": "Indra",
+    "deity_ja": "インドラ（神々の王）",
+    "symbol": "円形のお守り・傘・耳飾り",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "farmer",
+    "nature_ja": "長老・守護・英雄的行為・孤独",
+    "body_part": "首・舌・右腕",
+    "direction": "west",
+    "keywords": [
+      "seniority",
+      "protection",
+      "heroism",
+      "solitude",
+      "occult"
+    ],
+    "personality_ja": "最も年長の意味を持ち、責任と孤独を共に持つ。英雄的な守護者。神秘学への引力。深い洞察と孤独な強さ。家族や集団を一人で守る傾向。",
+    "career_ja": "秘教・研究・軍事・警察・行政・経営・霊的修行者",
+    "relationships_ja": "孤独を愛しながらも深い絆を求める矛盾。守護者としての役割を持ちやすい。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学的英雄・精神的守護"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "実務的な長老・組織の守護"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "集合的守護・人類への奉仕"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神的孤独・神秘的保護力"
+      }
+    ]
+  },
+  {
+    "index": 19,
+    "name_sa": "Mula",
+    "name_ja": "ムーラ",
+    "lord": "Ke",
+    "lord_ja": "ケートゥ",
+    "sign_range": "Sagittarius 0°00' - 13°20'",
+    "deity": "Nirriti",
+    "deity_ja": "ニリッティ（崩壊・解体の女神）",
+    "symbol": "根の束・象牙",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "butcher",
+    "nature_ja": "根源・解体・探求・真実",
+    "body_part": "足・左足",
+    "direction": "south",
+    "keywords": [
+      "roots",
+      "dissolution",
+      "investigation",
+      "truth_seeking",
+      "endings"
+    ],
+    "personality_ja": "物事の根源を探り当てる。既成の構造を解体して真実に迫る。破壊の後の再創造の力。隠された真実と根の探求者。哲学的な深さと破壊衝動の共存。",
+    "career_ja": "研究・哲学・考古学・医療（腫瘍学）・オカルト・解体業・農業",
+    "relationships_ja": "関係の根底を見抜く。古いパターンを解体して新しい基盤を作る。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "根源への突撃・勇敢な探求"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "根の物質的探求・土台"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "知的な根源探求・分析"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "感情的な根源・魂の故郷"
+      }
+    ]
+  },
+  {
+    "index": 20,
+    "name_sa": "Purva Ashadha",
+    "name_ja": "プールヴァ・アーシャーダー",
+    "lord": "Ve",
+    "lord_ja": "金星",
+    "sign_range": "Sagittarius 13°20' - 26°40'",
+    "deity": "Apas",
+    "deity_ja": "アーパス（水の神格・宇宙の水）",
+    "symbol": "扇・籠",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "brahmin",
+    "nature_ja": "浄化・勝利への準備・活力",
+    "body_part": "腿・背中",
+    "direction": "north",
+    "keywords": [
+      "purification",
+      "invincibility",
+      "pride",
+      "declaration",
+      "vitality"
+    ],
+    "personality_ja": "内なる勝利と誇り。敗北を認めない強さ。浄化と再活性化のエネルギー。真実への献身と闘志。理想のために戦う不屈の精神。",
+    "career_ja": "法律・政治・スポーツ・海運・水関連・哲学・精神修行",
+    "relationships_ja": "誇り高く、謝ることを苦手とする。勝利を共有できる相手を求める。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "誇り高き勝利宣言"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "精密な準備・浄化の技術"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "均衡の中の勝利・外交的強さ"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "変容的な勝利・水底の強さ"
+      }
+    ]
+  },
+  {
+    "index": 21,
+    "name_sa": "Uttara Ashadha",
+    "name_ja": "ウッタラ・アーシャーダー",
+    "lord": "Su",
+    "lord_ja": "太陽",
+    "sign_range": "Sagittarius 26°40' - Capricorn 10°00'",
+    "deity": "Vishvadevas",
+    "deity_ja": "ヴィシュヴァデーヴァ（全ての神々）",
+    "symbol": "象の牙・寝台の前脚",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "kshatriya",
+    "nature_ja": "最後の勝利・普遍的真実・徳",
+    "body_part": "腿・腰",
+    "direction": "east",
+    "keywords": [
+      "final_victory",
+      "virtue",
+      "universality",
+      "leadership",
+      "responsibility"
+    ],
+    "personality_ja": "普遍的な善への献身。最終的な勝利と徳の体現者。責任感と使命感の強さ。時代を超えた真実を追求する。孤独でも正しい道を歩む。",
+    "career_ja": "政治・法律・宗教・軍事・国家運営・教育・歴史",
+    "relationships_ja": "誠実で約束を守る。普遍的な愛と使命感を持つパートナー関係。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学的な勝利・真理の追求"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "実際の勝利・社会的達成"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "普遍的な勝利・人類への奉仕"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神的な最終勝利・解脱"
+      }
+    ]
+  },
+  {
+    "index": 22,
+    "name_sa": "Shravana",
+    "name_ja": "シュラヴァナ",
+    "lord": "Mo",
+    "lord_ja": "月",
+    "sign_range": "Capricorn 10°00' - 23°20'",
+    "deity": "Vishnu",
+    "deity_ja": "ヴィシュヌ（保護の神）",
+    "symbol": "耳・三つの足跡",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "mleccha",
+    "nature_ja": "聴く力・学習・繋がり・保護",
+    "body_part": "耳",
+    "direction": "north",
+    "keywords": [
+      "listening",
+      "learning",
+      "connection",
+      "preservation",
+      "media"
+    ],
+    "personality_ja": "聴く力と学習への深い献身。情報を集め保存する才能。人々を繋ぎ伝達する役割。ヴィシュヌのように世界を保護する意識。メディアと伝達への適性。",
+    "career_ja": "メディア・教育・宗教・カウンセリング・音楽・放送・記録",
+    "relationships_ja": "相手の話をよく聴く。保護的で養育的。情報共有を通じた繋がりを大切にする。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "積極的な学習・行動する聴聞者"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "物質的な知識の収集・保存"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "情報伝達・コミュニケーション"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "感情的な聴取・魂の保護"
+      }
+    ]
+  },
+  {
+    "index": 23,
+    "name_sa": "Dhanishtha",
+    "name_ja": "ダニシュタ",
+    "lord": "Ma",
+    "lord_ja": "火星",
+    "sign_range": "Capricorn 23°20' - Aquarius 6°40'",
+    "deity": "Vasus",
+    "deity_ja": "ヴァス（八神・富と豊穣の神々）",
+    "symbol": "太鼓・笛",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "farmer",
+    "nature_ja": "富・音楽・勇気・慈善",
+    "body_part": "背中・肛門",
+    "direction": "west",
+    "keywords": [
+      "wealth",
+      "music",
+      "courage",
+      "charity",
+      "ambition"
+    ],
+    "personality_ja": "リズムと音楽への深い感性。物質的豊かさと野心。慈善と分かち合いの心。勇気と率直さ。鋭い洞察力と結果志向。",
+    "career_ja": "音楽・芸能・軍事・医療・慈善活動・ビジネス・不動産",
+    "relationships_ja": "率直で情熱的。音楽や芸術を通じた絆。物質的豊かさを共有する関係を好む。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "音楽の王者・創造的野心"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "精密な音楽性・技術的豊かさ"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "調和の音楽・社交的豊かさ"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "深い音楽の変容力・神秘的富"
+      }
+    ]
+  },
+  {
+    "index": 24,
+    "name_sa": "Shatabhisha",
+    "name_ja": "シャタビシャ",
+    "lord": "Ra",
+    "lord_ja": "ラーフ",
+    "sign_range": "Aquarius 6°40' - 20°00'",
+    "deity": "Varuna",
+    "deity_ja": "ヴァルナ（宇宙秩序・水・真実の神）",
+    "symbol": "空の円・千の星",
+    "gana": "rakshasa",
+    "gana_ja": "羅刹族",
+    "caste": "butcher",
+    "nature_ja": "治癒・秘密・孤独・神秘科学",
+    "body_part": "踝・右腿",
+    "direction": "south",
+    "keywords": [
+      "healing",
+      "secrecy",
+      "solitude",
+      "mysticism",
+      "independence"
+    ],
+    "personality_ja": "千の医師という意味通り、深い治癒力を持つ。秘密を守る孤独な神秘家。宇宙の法則と真実を探求する。革新的な思考と孤立を好む。占星術・医学への適性。",
+    "career_ja": "医療・占星術・科学・哲学・電気工学・コンピュータ・霊的修行",
+    "relationships_ja": "孤独を愛するが深い絆を求める。秘密の共有者を求める。変容的な関係。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学的治癒・神秘的探求"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "構造的医学・制度的治癒"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "革新的治癒・人類の神秘"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "精神的治癒・宇宙との合一"
+      }
+    ]
+  },
+  {
+    "index": 25,
+    "name_sa": "Purva Bhadrapada",
+    "name_ja": "プールヴァ・バードラパダー",
+    "lord": "Ju",
+    "lord_ja": "木星",
+    "sign_range": "Aquarius 20°00' - Pisces 3°20'",
+    "deity": "Aja Ekapada",
+    "deity_ja": "アジャ・エーカパーダ（一本足の山羊・嵐の神）",
+    "symbol": "剣・二面の人間",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "brahmin",
+    "nature_ja": "熱狂・変容・精神的火・二面性",
+    "body_part": "腰・左腿",
+    "direction": "east",
+    "keywords": [
+      "passion",
+      "transformation",
+      "spiritual_fire",
+      "duality",
+      "asceticism"
+    ],
+    "personality_ja": "内なる精神の火と変容への情熱。二面性を持つ複雑な魂。世俗を超えた精神的探求。時に極端に走る傾向。タントラ・ヨーガへの親和性。",
+    "career_ja": "精神修行・タントラ・ヨーガ・変革的芸術・哲学・心理学",
+    "relationships_ja": "強烈で変容的な関係。世俗的な枠を超えた絆。精神的な同志を求める。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Leo",
+        "theme_ja": "精神的炎の誇り・創造的変容"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Virgo",
+        "theme_ja": "精密な霊的修行・奉仕的変容"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Libra",
+        "theme_ja": "均衡の精神火・調和的変容"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Scorpio",
+        "theme_ja": "最も深い変容・タントラ的炎"
+      }
+    ]
+  },
+  {
+    "index": 26,
+    "name_sa": "Uttara Bhadrapada",
+    "name_ja": "ウッタラ・バードラパダー",
+    "lord": "Sa",
+    "lord_ja": "土星",
+    "sign_range": "Pisces 3°20' - 16°40'",
+    "deity": "Ahirbudhnya",
+    "deity_ja": "アヒルブドニャ（深淵の蛇神・クンダリーニ）",
+    "symbol": "蛇（水中の）・寝台の後脚",
+    "gana": "manushya",
+    "gana_ja": "人間族",
+    "caste": "kshatriya",
+    "nature_ja": "深みの知恵・解脱・慈悲・長老",
+    "body_part": "腰・脛",
+    "direction": "west",
+    "keywords": [
+      "depth_wisdom",
+      "liberation",
+      "compassion",
+      "patience",
+      "serpent_power"
+    ],
+    "personality_ja": "深海の蛇のように深い知恵と忍耐。解脱への道を知る長老的魂。クンダリーニの上昇を体験する可能性。深い慈悲と静かな強さ。時代を超えた古い魂。",
+    "career_ja": "精神指導者・瞑想・ヨーガ指導・心理学・医療・哲学・長老的役割",
+    "relationships_ja": "深く穏やかな絆。忍耐と慈悲で関係を育む。精神的同伴者を求める。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Sagittarius",
+        "theme_ja": "哲学的深みの知恵・精神的長老"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Capricorn",
+        "theme_ja": "実践的な深みの知恵・組織の長老"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Aquarius",
+        "theme_ja": "普遍的慈悲・人類の深みの知恵"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Pisces",
+        "theme_ja": "完全な解脱・蛇と海の合一"
+      }
+    ]
+  },
+  {
+    "index": 27,
+    "name_sa": "Revati",
+    "name_ja": "レーヴァティー",
+    "lord": "Me",
+    "lord_ja": "水星",
+    "sign_range": "Pisces 16°40' - 30°00'",
+    "deity": "Pushan",
+    "deity_ja": "プーシャン（旅人の守護・牧人の神）",
+    "symbol": "太鼓・魚",
+    "gana": "deva",
+    "gana_ja": "神族",
+    "caste": "shudra",
+    "nature_ja": "完成・導き・保護・豊穣",
+    "body_part": "足・踵",
+    "direction": "north",
+    "keywords": [
+      "completion",
+      "guidance",
+      "abundance",
+      "nourishment",
+      "journey_end"
+    ],
+    "personality_ja": "27宿の最後にして完成のナクシャトラ。旅人を導く羊飼いの魂。精神的豊かさと導きの才能。繊細で感受性豊か。物質より精神の豊かさを重視。過去世の叡智。",
+    "career_ja": "精神指導者・カウンセラー・旅行業・農業・食品・音楽・芸術・動物関係",
+    "relationships_ja": "優しく包容力がある。導き、養育する関係を好む。繊細で傷つきやすい面も。",
+    "pada": [
+      {
+        "num": 1,
+        "navamsha_sign": "Aries",
+        "theme_ja": "完成から新たな始まりへ"
+      },
+      {
+        "num": 2,
+        "navamsha_sign": "Taurus",
+        "theme_ja": "物質的豊かさの完成"
+      },
+      {
+        "num": 3,
+        "navamsha_sign": "Gemini",
+        "theme_ja": "知の完成・叡智の伝達"
+      },
+      {
+        "num": 4,
+        "navamsha_sign": "Cancer",
+        "theme_ja": "魂の完成・全てへの帰還"
+      }
+    ]
+  }
+]
